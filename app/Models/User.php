@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'type_id',
+       'company_id',
     ];
 
     /**
@@ -33,11 +35,15 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+ public function userType()
+{
+    return $this->belongsTo(UserType::class, 'type_id');
+}
+
+public function company()
+{
+    return $this->belongsTo(CompanyName::class, 'company_id');
+}
     protected function casts(): array
     {
         return [

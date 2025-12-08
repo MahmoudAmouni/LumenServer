@@ -6,5 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class DocumentChunk extends Model
 {
-    //
+   protected $fillable = [
+    'document_id',
+    'chunk_text',
+    'embedding_id',
+    'chunk_index',
+    'page_number',
+    'section',
+    'token_count',
+];
+
+public function document()
+{
+    return $this->belongsTo(Document::class, 'document_id');
+}
 }
