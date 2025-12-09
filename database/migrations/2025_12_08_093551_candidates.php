@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone_number')->nullable();
             $table->string('level');
-            $table->string('portfolio_url')->nullable();
+            $table->string('github_url')->nullable();
             $table->integer('age')->nullable();
             $table->string('location')->nullable();
              $table->text('location')->nullable();
