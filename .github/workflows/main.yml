@@ -9,7 +9,6 @@ on:
 jobs: 
   ci:
     runs-on: ubuntu-latest 
-
     steps:
       - name: Checkout code 
         uses: actions/checkout@v6.0.1
@@ -28,7 +27,6 @@ jobs:
             composer -v
             cp .env.example .env
             php artisan key:generate
-            php artisan jwt:secret
             php artisan config:cache
             php artisan config:clear
         
@@ -45,10 +43,8 @@ jobs:
         uses: actions/checkout@v6.0.1
 
       - name: Connect to EC2 Server
-        uses: appleboy/ssh-actions@v1.2.1
+        uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.host_name }}
           username: ${{ secrets.username }}
           key: ${{ secrets.key }}
-
-          
