@@ -20,8 +20,7 @@ return new class extends Migration
             $table->string('status', 50)->default('draft');
             $table->string('contract_type', 50);
             $table->text('offer_letter_template')->nullable();
-
-
+            $table->unsignedBigInteger('recruiter_id')->nullable();
             $table->timestamps();
         });
     }
