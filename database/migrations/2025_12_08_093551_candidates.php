@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('level');
             $table->string('github_url')->nullable();
             $table->integer('age')->nullable();
-            $table->string('location')->nullable();
             $table->string('linkedin_url')->nullable();
+            $table->string('location')->nullable();
             $table->text('cv_path')->nullable();
             $table->timestamps();        
             });
