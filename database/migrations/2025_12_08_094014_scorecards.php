@@ -14,11 +14,12 @@ return new class extends Migration
             Schema::create('scorecards', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('candidate_id');
-                $table->unsignedBigInteger('evakuater_id');
-                $table->unsignedBigInteger('intreview_id');
+                $table->unsignedBigInteger('evaluator_id');
+                $table->unsignedBigInteger('interview_id');
                 $table->string('status')->default('pending');
-                $table->string('overall_recommendation')->nullable();
-                $table->string('summary')->nullable();
+                $table->unsignedBigInteger('scorerate_id');
+                $table->unsignedBigInteger('job_id');
+                $table->unsignedBigInteger('scorelabel_id');
                 $table->timestamps();
 
 
