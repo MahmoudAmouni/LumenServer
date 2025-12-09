@@ -14,11 +14,16 @@ class offer extends Model
         'contract_type',
         'offer_letter_template',
         'status',
+        'recruiter_id',
     ];
 
     public function candidate()
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');
+    }
+    public function recruiter()
+    {
+        return $this->belongsTo(User::class, 'recruiter_id');
     }
 
 }
