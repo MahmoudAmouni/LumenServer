@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('job_id');
             $table->decimal('salary', 15, 2);
             $table->date('start_date');
-            $table->string('status');
+            $table->string('status', 50)->default('draft');
             $table->string('contract_type', 50);
             $table->text('offer_letter_template')->nullable();
 
