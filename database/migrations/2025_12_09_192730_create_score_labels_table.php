@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('score_labels', function (Blueprint $table) {
             $table->id();
-            $table->string('label')->unique();;
+            $table->string('name')->unique();
             $table->integer('max_score');
             $table->timestamps();
         });
     }
-
+                
     /**
      * Reverse the migrations.
      */

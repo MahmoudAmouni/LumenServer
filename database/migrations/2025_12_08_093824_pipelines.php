@@ -15,6 +15,7 @@ return new class extends Migration
                 $table->id();
                 $table->string('name');
                 $table->unsignedBigInteger('job_id');
+                $table->integer('pipeline_stage_id')->nullable();
                 $table->timestamps();
 
 

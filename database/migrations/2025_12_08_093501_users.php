@@ -10,15 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
+            Schema::create('users', function (Blueprint $table) {
+              $table->id();
+            $table->integer('company_id')->nullable();  
+            $table->integer('type_id');
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
             $table->timestamps();
             $table->rememberToken();
-            $table->integer('type_id');
-        });
+            });
 
 
     }
