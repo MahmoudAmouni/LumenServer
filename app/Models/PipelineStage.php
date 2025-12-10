@@ -12,8 +12,5 @@ class PipelineStage extends Model
     'order',
 ];
 
-public function pipeline()
-{
-    return $this->belongsTo(Pipeline::class, 'pipeline_id');
-}
+
 }

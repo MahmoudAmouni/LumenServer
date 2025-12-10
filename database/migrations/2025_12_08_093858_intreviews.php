@@ -15,13 +15,11 @@ return new class extends Migration
                 $table->id();
                 $table->unsignedBigInteger('candidate_id');
                 $table->unsignedBigInteger('interviewer_id');
-                $table->unsignedBigInteger('intreview_type_id');
                 $table->string('scorecard_id');
                 $table->string('notes')->nullable();
                 $table->integer('duration')->nullable();
                 $table->dateTime('scheduled_at');
                 $table->string('status')->default('scheduled');
-                $table->text('feedback')->nullable();
                 $table->timestamps();
 
 

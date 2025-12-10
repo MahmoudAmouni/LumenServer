@@ -15,12 +15,7 @@ return new class extends Migration
 
               $table->id();
               $table->string('candidate_id');
-              $table->enum('type', ['resume', 'cover_letter', 'portfolio', 'other']);
-              $table->text('name');
               $table->string('file_path');
-              $table->string('mime_type');
-              $table->text('extracted_text')->nullable();
-              $table->text('notes')->nullable();
               $table->timestamps();
             });
     }

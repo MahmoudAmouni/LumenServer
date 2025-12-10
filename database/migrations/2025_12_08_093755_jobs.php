@@ -12,13 +12,13 @@ return new class extends Migration
     {
             Schema::create('jobs', function (Blueprint $table) {
                 $table->id();
+                 $table->integer('recruiter_id')->nullable();  
+                $table->integer('company_id')->nullable();
                 $table->string('title');
                 $table->text('description');
                 $table->string('location')->nullable();
                 $table->string('employment_type')->nullable();
                 $table->string('level')->nullable();
-                $table->integer('hiring_manager_id')->nullable();  
-                $table->integer('company_id')->nullable();          
                 $table->string('status')->default('open');
                 $table->timestamps();
      });

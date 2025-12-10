@@ -14,7 +14,6 @@ return new class extends Migration
             Schema::create('scorecards', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('candidate_id');
-                $table->unsignedBigInteger('evaluator_id');
                 $table->unsignedBigInteger('interview_id');
                 $table->string('status')->default('pending');
                 $table->unsignedBigInteger('scorerate_id');
