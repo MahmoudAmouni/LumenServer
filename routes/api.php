@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+
 $baseurl = env('APP_URL', 'http://localhost');
 
 

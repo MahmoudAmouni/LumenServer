@@ -13,7 +13,7 @@ return new class extends Migration
     {
            Schema::create('document_chunks', function (Blueprint $table) {
               $table->id();
-              $table->string('document_id');
+              $table->unsignedBigInteger('document_id');
               $table->text('chunk_text');
               $table->integer('embedding_id')->nullable();
               $table->integer('chunk_index');

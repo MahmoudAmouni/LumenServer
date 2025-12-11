@@ -15,7 +15,7 @@ return new class extends Migration
                 $table->id();
                 $table->unsignedBigInteger('candidate_id');
                 $table->unsignedBigInteger('interviewer_id');
-                $table->string('scorecard_id');
+                $table->unsignedBigInteger('scorecard_id')->nullable();
                 $table->string('notes')->nullable();
                 $table->integer('duration')->nullable();
                 $table->dateTime('scheduled_at');

@@ -13,13 +13,13 @@ return new class extends Migration
     {
          Schema::create('copilot_queries', function (Blueprint $table) {
            $table->id();
-           $table->string('candidate_id');
-           $table->string('job_id');
+           $table->unsignedBigInteger('candidate_id');
+           $table->unsignedBigInteger('job_id');
               $table->text('query_text');
               $table->text('response_text');
-              $table->string('query_by_recruiter_id');
+              $table->unsignedBigInteger('recruiter_id');
               $table->text('citation_text')->nullable();
-              $table->string('source_id');
+              $table->unsignedBigInteger('source_id')->nullable();
                 $table->timestamps();
             });
     }

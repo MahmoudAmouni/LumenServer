@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CandidatePipelineStage extends Model
 {
+    use HasFactory;
  protected $fillable = [
     'candidate_id',
     'pipeline_stage_id',
@@ -21,7 +23,7 @@ public function candidate()
 
 public function pipelineStage()
 {
-    return $this->belongsTo(PipelineStage::class, 'pipeline_stage_id');
+    return $this->belongsTo(Stage::class, 'pipeline_stage_id');
 }
 
 public function job()
