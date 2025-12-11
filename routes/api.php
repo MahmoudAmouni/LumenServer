@@ -9,6 +9,12 @@ use App\Http\Controllers\AuthController;
 // Auth routes (no authentication required)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/error', function () {
+    return response()->json([
+        'status' => 'failure',
+        'payload' => ['message' => 'Unauthorized']
+    ], 401);
+});
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     
