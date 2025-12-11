@@ -13,7 +13,6 @@ return new class extends Migration
     {
             Schema::create('pipeline_stages', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('pipeline_id');
                 $table->string('name');
                 $table->integer('order');
                 $table->timestamps();
