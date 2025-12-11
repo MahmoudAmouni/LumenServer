@@ -21,9 +21,14 @@ class Stage extends Model
         return $this->hasMany(CandidatePipelineStage::class, 'pipeline_stage_id');
     }
 
+    public function pipelineStages()
+    {
+        return $this->hasMany(PipelineStages::class, 'pipeline_stage_id');
+    }
+
     public function pipelines()
     {
-        return $this->belongsToMany(Pipeline::class, 'pipeline_pipeline_stages', 'pipeline_stage_id', 'pipeline_id');
+        return $this->hasManyThrough(Pipeline::class, PipelineStages::class, 'pipeline_stage_id', 'id', 'id', 'pipeline_id');
     }
 }
 

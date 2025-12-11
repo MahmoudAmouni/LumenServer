@@ -19,8 +19,13 @@ class Pipeline extends Model
         return $this->belongsTo(Job::class, 'job_id');
     }
 
+    public function pipelineStages()
+    {
+        return $this->hasMany(PipelineStages::class, 'pipeline_id');
+    }
+
     public function stages()
     {
-        return $this->belongsToMany(Stage::class, 'pipeline_pipeline_stages', 'pipeline_id', 'pipeline_stage_id')->orderBy('order');
+        return $this->hasManyThrough(Stage::class, PipelineStages::class, 'pipeline_id', 'id', 'id', 'pipeline_stage_id')->orderBy('order');
     }
 }
