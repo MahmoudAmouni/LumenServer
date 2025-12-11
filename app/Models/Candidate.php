@@ -44,12 +44,12 @@ public function documents()
 
 public function interviews()
 {
-    return $this->hasMany(Intreview::class, 'candidate_id');
+    return $this->hasMany(Interview::class, 'candidate_id');
 }
 
 public function offers()
 {
-    return $this->hasMany(offer::class, 'candidate_id');
+    return $this->hasMany(Offer::class, 'candidate_id');
 }
 
 public function scorecards()

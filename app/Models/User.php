@@ -68,12 +68,12 @@ public function candidateJobsAdded()
 
 public function interviewsAsInterviewer()
 {
-    return $this->hasMany(Intreview::class, 'interviewer_id');
+    return $this->hasMany(Interview::class, 'interviewer_id');
 }
 
 public function offersAsRecruiter()
 {
-    return $this->hasMany(offer::class, 'recruiter_id');
+    return $this->hasMany(Offer::class, 'recruiter_id');
 }
 
 

@@ -25,12 +25,12 @@ class Scorecard extends Model
 
     public function interview()
     {
-        return $this->belongsTo(Intreview::class, 'interview_id');
+        return $this->belongsTo(Interview::class, 'interview_id');
     }
 
     public function scorelabel()
     {
-        return $this->belongsTo(scorelabel::class, 'scorelabel_id');
+        return $this->belongsTo(ScoreLabel::class, 'scorelabel_id');
     }
 
     public function job()
