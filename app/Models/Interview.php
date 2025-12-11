@@ -5,34 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Offer extends Model
+class Interview extends Model
 {
     use HasFactory;
     
+    protected $table = 'interviews';
+    
     protected $fillable = [
         'candidate_id',
-        'job_id',
-        'salary',
-        'start_date',
-        'contract_type',
-        'offer_letter_template',
+        'interviewer_id',
+        'notes',
+        'duration',
+        'scheduled_at',
         'status',
-        'recruiter_id',
     ];
 
     public function candidate()
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');
     }
-    
-    public function job()
+
+    public function interviewer()
     {
-        return $this->belongsTo(Job::class, 'job_id');
-    }
-    
-    public function recruiter()
-    {
-        return $this->belongsTo(User::class, 'recruiter_id');
+        return $this->belongsTo(User::class, 'interviewer_id');
     }
 
+    public function scorecards()
+    {
+        return $this->hasMany(Scorecard::class, 'interview_id');
+    }
 }

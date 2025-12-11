@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-          Schema::create('intreviews', function (Blueprint $table) {
+          Schema::create('interviews', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('candidate_id');
                 $table->unsignedBigInteger('interviewer_id');
-                $table->string('scorecard_id');
                 $table->string('notes')->nullable();
                 $table->integer('duration')->nullable();
                 $table->dateTime('scheduled_at');
@@ -33,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('intreviews');
+        Schema::dropIfExists('interviews');
     }
 };

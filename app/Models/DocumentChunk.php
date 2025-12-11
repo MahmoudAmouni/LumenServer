@@ -11,7 +11,7 @@ class DocumentChunk extends Model
    protected $fillable = [
     'document_id',
     'chunk_text',
-    'embedding_id',
+    'embedding',
     'chunk_index',
     'page_number',
     'section',
