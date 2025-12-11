@@ -59,4 +59,3 @@ class AuthService
         return $user->load('userType', 'company');
     }
 }
-

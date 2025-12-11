@@ -1,0 +1,103 @@
+<?php
+
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+
+class AuthControllerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected $user;
+    protected $token;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create([
+            'email' => 'testuser@example.com'
+        ]);
+
+        $this->token = $this->user->createToken('auth-token')->plainTextToken;
+    }
+
+    protected function authHeaders(): array
+    {
+        return [
+            'Authorization' => 'Bearer ' . $this->token,
+            'Accept' => 'application/json',
+        ];
+    }
+
+    public function test_register_success()
+    {
+        $payload = [
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'password' => 'password123',
+            'type_id' => 1,
+            'company_id' => 1 
+        ];
+
+        $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => 'success'
+            ])
+            ->assertJsonStructure([
+                'status',
+                'payload' => [
+                    'user' => ['id', 'name', 'email'],
+                    'token'
+                ]
+            ]);
+    }
+
+    public function test_login_success()
+    {
+        $user = User::factory()->create([
+            'email' => 'login@example.com',
+            'password' => Hash::make('password123')
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'login@example.com',
+            'password' => 'password123'
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson(['status' => 'success']);
+    }
+
+    public function test_login_invalid_credentials_failure()
+    {
+        User::factory()->create([
+            'email' => 'wrong@example.com',
+            'password' => Hash::make('correctpass')
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'wrong@example.com',
+            'password' => 'incorrect'
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('email');
+    }
+
+    public function test_display_error()
+    {
+        $response = $this->getJson('/api/error'); 
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'status' => 'failure',
+                'payload' => ['message' => 'Unauthorized']
+            ]);
+    }
+}
