@@ -14,7 +14,7 @@ class UserTypeFactory extends Factory
         return [
             'name' => $this->faker->randomElement([
                 'admin',
-                'recruiter',
+                'recruiter',//
                 'interviewr',
             ]),
         ];

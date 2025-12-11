@@ -28,7 +28,7 @@ class AuthController extends Controller
 
             if ($validator->fails()) {
                 throw new ValidationException($validator);
-            }
+            }//
 
             $data = $validator->validated();
             $result = $this->authService->register($data);

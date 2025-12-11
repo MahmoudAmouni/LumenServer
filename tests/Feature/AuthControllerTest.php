@@ -83,7 +83,7 @@ class AuthControllerTest extends TestCase
 
         $response = $this->postJson('/api/login', [
             'email' => 'wrong@example.com',
-            'password' => 'incorrect'
+            'password' => 'incorrect'//
         ]);
 
         $response->assertStatus(422)
