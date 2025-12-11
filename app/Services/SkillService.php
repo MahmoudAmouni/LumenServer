@@ -28,6 +28,50 @@ class SkillService
         return $skill;
     }
 
+    public function createSkills(array $skills): array
+    {
+        $allSkillsData = [];
+
+        foreach ($skills as $skillData) {
+            $skillName = is_array($skillData) ? $skillData['name'] : $skillData;
+            $allSkillsData[$skillName] = [
+                'name' => $skillName,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        $skillNames = array_keys($allSkillsData);
+        $existingSkills = Skill::whereIn('name', $skillNames)
+            ->get()
+            ->keyBy('name');
+
+        $newSkillsData = [];
+        $allSkillIds = [];
+
+        foreach ($allSkillsData as $name => $data) {
+            if (isset($existingSkills[$name])) {
+                $allSkillIds[$name] = $existingSkills[$name]->id;
+            } else {
+                $newSkillsData[] = $data;
+            }
+        }
+
+        if (!empty($newSkillsData)) {
+            Skill::insert($newSkillsData);
+
+            $newSkills = Skill::whereIn('name', array_column($newSkillsData, 'name'))
+                ->get()
+                ->keyBy('name');
+
+            foreach ($newSkills as $name => $skill) {
+                $allSkillIds[$name] = $skill->id;
+            }
+        }
+
+        return $allSkillIds;
+    }
+
     public function updateSkill(int $id, string $name): Skill
     {
         $skill = Skill::find($id);
