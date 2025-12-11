@@ -1,24 +1,19 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\OfferController;
+use App\Http\Controllers\AuthController;
 
-
-$baseurl = env('APP_URL', 'http://localhost');
-
-
-
-
-Route::post('/login', [AuthController::class, "login"]);
-Route::post('/register', [AuthController::class, "register"]);
-Route::get('/error', [AuthController::class, "displayError"])->name("login");
+// Auth routes (no authentication required)
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
-
-
-
-     Route::get('/pipelines', [CandidateController::class, 'getAllPipelines']);
+    
+    // Pipeline routes
+    Route::get('/pipelines', [CandidateController::class, 'getAllPipelines']);
     Route::get('/pipelines/{id}', [CandidateController::class, 'getPipelineById']);
     Route::get('/pipelines-with-stages', [CandidateController::class, 'getPipelinesWithStages']);
     
@@ -36,12 +31,13 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::put('/candidate-pipeline-stages/{id}', [CandidateController::class, 'createOrUpdateCandidatePipelineStage']);
     Route::get('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
     Route::post('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
-
-
-    Route::middleware(['admin'])->group(function () {
-    });
-
-    Route::middleware(['recruiter'])->group(function () {
-    });
-
+    
+    // Offers CRUD routes
+    Route::get('/offers', [OfferController::class, 'getAllOffers']);
+    Route::get('/offers/{id}', [OfferController::class, 'getOfferById']);
+    Route::post('/offers/add', [OfferController::class, 'createOrUpdateOffer']);
+    Route::put('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
+    Route::get('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+    Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+    
 });
