@@ -14,7 +14,7 @@ return new class extends Migration {
               
               $table->id();
               
-            $table->unsignedBigInteger('company_id');  
+     $table->unsignedBigInteger('company_id')->nullable(); 
             $table->integer('type_id');
             $table->string('name');
             $table->string('email')->unique();
