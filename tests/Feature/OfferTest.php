@@ -52,7 +52,7 @@ class OfferTest extends TestCase
             'email' => 'john@example.com'
         ]);
 
-        $offer1 = offer::factory()->create([
+        $offer1 = Offer::factory()->create([
             'candidate_id' => $candidate->id,
             'job_id' => $job->id,
             'salary' => 50000.00,
@@ -111,7 +111,7 @@ class OfferTest extends TestCase
             'email' => 'john@example.com'
         ]);
 
-        $offer1 = offer::factory()->create([
+        $offer1 = Offer::factory()->create([
             'candidate_id' => $candidate->id,
             'job_id' => $job->id,
             'salary' => 50000.00,
