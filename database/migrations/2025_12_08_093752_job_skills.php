@@ -16,7 +16,7 @@ return new class extends Migration
                 $table->id();
                 $table->unsignedBigInteger('job_id');
                 $table->unsignedBigInteger('skill_id');
-                $table->integer('Type'); //1 required, 2 nice to have
+                $table->integer('type'); //1 required, 2 nice to have
                 $table->timestamps();
 
 

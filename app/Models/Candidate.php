@@ -7,20 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 class Candidate extends Model
 {
    protected $fillable = [
-    'user_id',
+    'recruiter_id', 
     'full_name',
     'email',
-    'phone',
+    'phone_number',
     'level',
-    'portfolio_url',
     'github_url',
     'linkedin_url',
     'cv_path',
+    'age',
+    'location',
+
 ];
 
 public function user()
 {
-    return $this->belongsTo(User::class, 'user_id');
+    return $this->belongsTo(User::class, 'recruiter_id');
 }
 
 public function scorecards()
@@ -31,31 +33,6 @@ public function scorecards()
 public function copilotQueries()
 {
     return $this->hasMany(CopilotQuery::class, 'candidate_id');
-}
-
-public function candidateJobs()
-{
-    return $this->hasMany(CandidateJob::class, 'candidate_id');
-}
-
-public function candidatePipelineStages()
-{
-    return $this->hasMany(CandidatePipelineStage::class, 'candidate_id');
-}
-
-public function documents()
-{
-    return $this->hasMany(Document::class, 'candidate_id');
-}
-
-public function interviews()
-{
-    return $this->hasMany(Intreview::class, 'candidate_id');
-}
-
-public function offers()
-{
-    return $this->hasMany(offer::class, 'candidate_id');
 }
 
 }

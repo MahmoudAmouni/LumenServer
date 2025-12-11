@@ -32,9 +32,4 @@ public function job()
 {
     return $this->belongsTo(Job::class, 'job_id');
 }
-
-public function scorecards()
-{
-    return $this->hasMany(Scorecard::class, 'interview_id');
-}
 }
