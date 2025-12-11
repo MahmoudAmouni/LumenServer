@@ -7,10 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 class PipelineStage extends Model
 {
   protected $fillable = [
-    'pipeline_id',
+  
     'name',
     'order',
 ];
 
+public function pipeline()
+{
+    return $this->belongsTo(Pipeline::class, 'pipeline_id');
+}
+
+public function candidatePipelineStages()
+{
+    return $this->hasMany(CandidatePipelineStage::class, 'pipeline_stage_id');
+}
+
+public function pipelines()
+{
+    return $this->belongsToMany(Pipeline::class, 'pipeline_pipeline_stages', 'pipeline_stage_id', 'pipeline_id');
+}
 
 }

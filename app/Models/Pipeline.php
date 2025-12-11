@@ -20,5 +20,9 @@ public function stages()
 {
     return $this->hasMany(PipelineStage::class, 'pipeline_id')->orderBy('order');
 }
+
+public function pipelineStages()
+{
+    return $this->belongsToMany(PipelineStage::class, 'pipeline_pipeline_stages', 'pipeline_id', 'pipeline_stage_id');
 }
 }

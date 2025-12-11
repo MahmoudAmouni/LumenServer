@@ -38,4 +38,9 @@ public function scorelabel()
 {
     return $this->belongsTo(scorelabel::class, 'scorelabel_id');
 }
+
+public function job()
+{
+    return $this->belongsTo(Job::class, 'job_id');
+}
 }

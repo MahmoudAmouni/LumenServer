@@ -44,11 +44,40 @@ public function company()
 {
     return $this->belongsTo(CompanyName::class, 'company_id');
 }
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+
+public function candidate()
+{
+    return $this->hasOne(Candidate::class, 'user_id');
+}
+
+public function jobsAsHiringManager()
+{
+    return $this->hasMany(Job::class, 'hiring_manager_id');
+}
+
+public function candidateJobsAdded()
+{
+    return $this->hasMany(CandidateJob::class, 'added_by_recruiter_id');
+}
+
+public function interviewsAsHiringManager()
+{
+    return $this->hasMany(Intreview::class, 'hiring_manager_id');
+}
+
+public function offersAsRecruiter()
+{
+    return $this->hasMany(offer::class, 'recruiter_id');
+}
+
+public function scorecardsAsEvaluator()
+{
+    return $this->hasMany(Scorecard::class, 'evaluator_id');
+}
+
+public function copilotQueriesAsRecruiter()
+{
+    return $this->hasMany(CopilotQuery::class, 'query_by_recruiter_id');
+}
+
 }
