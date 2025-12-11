@@ -2,20 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Intreview extends Model
 {
+    use HasFactory;
    protected $fillable = [
     'candidate_id',
-    'hiring_manager_id',
-    'job_id',
-    'interview_type',
-    'stage',
-    'scheduled_at',
-    'completed_at',
-    'duration_minutes',
+    'interviewer_id',
+    'scorecard_id',
     'notes',
+    'duration',
+    'scheduled_at',
+    'status',
 ];
 
 public function candidate()
@@ -23,13 +23,13 @@ public function candidate()
     return $this->belongsTo(Candidate::class, 'candidate_id');
 }
 
-public function hiringManager()
+public function interviewer()
 {
-    return $this->belongsTo(User::class, 'hiring_manager_id');
+    return $this->belongsTo(User::class, 'interviewer_id');
 }
 
-public function job()
+public function scorecards()
 {
-    return $this->belongsTo(Job::class, 'job_id');
+    return $this->hasMany(Scorecard::class, 'interview_id');
 }
 }

@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CandidateJob extends Model
 {
+    use HasFactory;
    protected $fillable = [
     'candidate_id',
     'job_id',
-    'applied_at',
     'source',
-    'added_by_recruiter_id',
-    'cover_letter',
+    'recruiter_id',
 ];
 
 public function candidate()
@@ -25,8 +25,8 @@ public function job()
     return $this->belongsTo(Job::class, 'job_id');
 }
 
-public function addedByRecruiter()
+public function recruiter()
 {
-    return $this->belongsTo(User::class, 'added_by_recruiter_id');
+    return $this->belongsTo(User::class, 'recruiter_id');
 }
 }
