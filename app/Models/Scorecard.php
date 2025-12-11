@@ -14,6 +14,9 @@ class Scorecard extends Model
     'overall_recommendation',
     'summary',
     'evaluation_criteria',
+    'scorerate_id',
+    'job_id',
+    'scorelabel_id',
 ];
 
 public function candidate()
@@ -29,5 +32,10 @@ public function interview()
 public function evaluator()
 {
     return $this->belongsTo(User::class, 'evaluator_id');
+}
+
+public function scorelabel()
+{
+    return $this->belongsTo(scorelabel::class, 'scorelabel_id');
 }
 }

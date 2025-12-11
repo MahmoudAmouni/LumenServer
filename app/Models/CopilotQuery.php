@@ -10,7 +10,7 @@ class CopilotQuery extends Model
     'candidate_id',
     'job_id',
     'query_text',
-    'response',
+    'response_text',
     'query_by_recruiter_id',
     'citation_text',
     'source_id',
