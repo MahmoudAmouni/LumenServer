@@ -5,17 +5,36 @@ namespace App\Services;
 use App\Models\Pipeline;
 use App\Models\PipelineStages;
 use App\Models\Stage;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class PipelineService
 {
     public function createPipeline(int $jobId, string $jobTitle, array $Stages): Pipeline
     {
+        
+        $data = [
+            'job_id' => $jobId,
+            'job_title' => $jobTitle,
+            'stages' => $Stages,
+        ];
+        
+        $validator = Validator::make($Stages, [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'job_title' => ['required', 'string', 'max:255'],
+            'stages' => ['required', 'array', 'min:0'],
+            'stages.*.name' => ['required', 'string', 'max:255'],
+        ]);
+        
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
         $pipeline = new Pipeline();
         $pipeline->job_id = $jobId;
         $pipeline->name = $jobTitle;
         $pipeline->save();
-
+        
+        
         $allStagesData = [];
         $stagesWithOrder = [];
         $order = 1;
@@ -25,12 +44,19 @@ class PipelineService
             'created_at' => now(),
             'updated_at' => now(),
         ];
+        $allStagesData['interview'] = [
+            'name' => 'interview',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
 
 
         //first stage applied of order 1 set all the stages in array to do insert down
         $stagesWithOrder['applied'] = $order;
         $order++;
+        $stagesWithOrder['interview'] = $order;
         foreach ($Stages as $stageData) {
+            $order++;
             $stageName = $stageData['name'];
             $allStagesData[$stageName] = [
                 'name' => $stageName,
@@ -38,31 +64,29 @@ class PipelineService
                 'updated_at' => now(),
             ];
             $stagesWithOrder[$stageName] = $order;
-            $order++;
         }
 
         //adding the 3 other default ending stages
-        $n = $order - 1;
         $allStagesData['offer'] = [
             'name' => 'offer',
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        $stagesWithOrder['offer'] = $n + 1;
+        $stagesWithOrder['offer'] = $order + 1;
 
         $allStagesData['hired'] = [
             'name' => 'hired',
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        $stagesWithOrder['hired'] = $n + 2;
+        $stagesWithOrder['hired'] = $order + 2;
 
         $allStagesData['rejected'] = [
             'name' => 'rejected',
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        $stagesWithOrder['rejected'] = $n + 3;
+        $stagesWithOrder['rejected'] = $order + 3;
 
         
 
@@ -118,4 +142,3 @@ class PipelineService
         return $pipeline;
     }
 }
-
