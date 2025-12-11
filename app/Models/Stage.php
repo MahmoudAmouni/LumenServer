@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PipelineStage extends Model
+class Stage extends Model
 {
-    use HasFactory;
   protected $fillable = [
   
     'name',
     'order',
 ];
+
+public function pipeline()
+{
+    return $this->belongsTo(Pipeline::class, 'pipeline_id');
+}
 
 public function candidatePipelineStages()
 {

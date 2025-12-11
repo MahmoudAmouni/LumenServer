@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'type_id',
-        'company_id',
+       'company_id',
     ];
 
     /**
@@ -36,34 +37,38 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    public function userType()
+    protected $dates = [];
+
+    protected function casts(): array
     {
-        return $this->belongsTo(UserType::class, 'type_id');
+        return [
+            'password' => 'hashed',
+        ];
     }
+
+ public function userType()
+{
+    return $this->belongsTo(UserType::class, 'type_id');
+}
 
 public function company()
 {
     return $this->belongsTo(CompanyName::class, 'company_id');
 }
 
-public function candidate()
+public function jobsAsRecruiter()
 {
-    return $this->hasOne(Candidate::class, 'user_id');
-}
-
-public function jobsAsHiringManager()
-{
-    return $this->hasMany(Job::class, 'hiring_manager_id');
+    return $this->hasMany(Job::class, 'recruiter_id');
 }
 
 public function candidateJobsAdded()
 {
-    return $this->hasMany(CandidateJob::class, 'added_by_recruiter_id');
+    return $this->hasMany(CandidateJob::class, 'recruiter_id');
 }
 
-public function interviewsAsHiringManager()
+public function interviewsAsInterviewer()
 {
-    return $this->hasMany(Intreview::class, 'hiring_manager_id');
+    return $this->hasMany(Intreview::class, 'interviewer_id');
 }
 
 public function offersAsRecruiter()
@@ -71,14 +76,30 @@ public function offersAsRecruiter()
     return $this->hasMany(offer::class, 'recruiter_id');
 }
 
-public function scorecardsAsEvaluator()
-{
-    return $this->hasMany(Scorecard::class, 'evaluator_id');
-}
 
 public function copilotQueriesAsRecruiter()
 {
     return $this->hasMany(CopilotQuery::class, 'query_by_recruiter_id');
+}
+
+/**
+ * Get the identifier that will be stored in the subject claim of the JWT.
+ *
+ * @return mixed
+ */
+public function getJWTIdentifier()
+{
+    return $this->getKey();
+}
+
+/**
+ * Return a key value array, containing any custom claims to be added to the JWT.
+ *
+ * @return array
+ */
+public function getJWTCustomClaims()
+{
+    return [];
 }
 
 }
