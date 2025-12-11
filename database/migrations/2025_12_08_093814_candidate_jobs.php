@@ -16,7 +16,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('candidate_id');
                 $table->unsignedBigInteger('job_id');
                 $table->string('source')->nullable();
-                $table->string('recruiter_id')->default('applied');
+                $table->unsignedBigInteger('recruiter_id');
                 $table->timestamps();
 
 
