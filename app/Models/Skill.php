@@ -10,5 +10,9 @@ class Skill extends Model
     'name',
 ];
 
+public function jobSkills()
+{
+    return $this->hasMany(JobSkill::class, 'skill_id');
+}
 
 }

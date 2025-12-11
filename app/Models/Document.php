@@ -20,4 +20,9 @@ public function candidate()
 {
     return $this->belongsTo(Candidate::class, 'candidate_id');
 }
+
+public function chunks()
+{
+    return $this->hasMany(DocumentChunk::class, 'document_id');
+}
 }
