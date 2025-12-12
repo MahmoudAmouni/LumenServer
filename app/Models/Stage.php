@@ -15,7 +15,7 @@ class Stage extends Model
         return \Database\Factories\PipelineStageFactory::new();
     }
     
-    protected $table = 'pipeline_stages';
+    protected $table = 'stages';
     
     protected $fillable = [
         'name',
@@ -29,12 +29,12 @@ class Stage extends Model
 
     public function pipelineStages()
     {
-        return $this->hasMany(PipelineStages::class, 'pipeline_stage_id');
+        return $this->hasMany(PipelineStages::class, 'stage_id');
     }
 
     public function pipelines()
     {
-        return $this->hasManyThrough(Pipeline::class, PipelineStages::class, 'pipeline_stage_id', 'id', 'id', 'pipeline_id');
+        return $this->hasManyThrough(Pipeline::class, PipelineStages::class, 'stage_id', 'id', 'id', 'pipeline_id');
     }
 }
 

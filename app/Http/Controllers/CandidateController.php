@@ -8,12 +8,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CandidateController extends Controller
 {
-    public function __construct(private CandidateService $service)
-    {
+    public function __construct(private CandidateService $service){
     }
 
-    public function getAllPipelines(Request $request)
-    {
+    public function getAllPipelines(Request $request){
         try {
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             $companyId = $request->query('company_id') ? (int) $request->query('company_id') : null;

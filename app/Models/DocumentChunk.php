@@ -15,7 +15,6 @@ class DocumentChunk extends Model
     'chunk_index',
     'page_number',
     'section',
-    'token_count',
 ];
 
 public function document()
