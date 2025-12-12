@@ -12,7 +12,7 @@ jobs:
 
     env:
       APP_ENV: testing
-      JWT_SECRET: ci-testing-secret
+      JWT_SECRET: ZMbLTbI8ubNegy3CAjfMDB4CY8pAzyCtBwPSXh3blg5s5JsJAHLuixd8xpYjKAQG
 
     steps:
       - name: Checkout code
