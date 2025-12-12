@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\InterviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,7 +18,7 @@ Route::get('/error', [AuthController::class, "displayError"])->name("login");
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
 
-
+    Route::post("/update/{id}", [InterviewController::class,"update"]);
 
      Route::get('/pipelines', [CandidateController::class, 'getAllPipelines']);
     Route::get('/pipelines/{id}', [CandidateController::class, 'getPipelineById']);

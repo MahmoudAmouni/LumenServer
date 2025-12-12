@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
 use App\Models\Pipeline;
 use App\Models\CandidatePipelineStage;
 use App\Models\Candidate;
 use App\Models\Job;
 use App\Models\CompanyName;
-use App\Models\PipelineStage;
 use App\Models\Scorecard;
 use App\Models\scorelabel;
 use App\Models\User;
@@ -27,8 +27,8 @@ class candidatetest extends TestCase
         $this->user = User::factory()->create([
             'email' => 'test@example.com' 
         ]);
-        
-        $this->token = $this->user->createToken('test-token')->plainTextToken;
+
+        $this->token = JWTAuth::fromUser($this->user);
     }
 
     protected function getAuthHeaders(): array

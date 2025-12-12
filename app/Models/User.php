@@ -12,7 +12,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use  HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -87,10 +87,12 @@ public function copilotQueriesAsRecruiter()
  *
  * @return mixed
  */
-public function getJWTIdentifier()
-{
-    return $this->getKey();
-}
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
 
 /**
  * Return a key value array, containing any custom claims to be added to the JWT.

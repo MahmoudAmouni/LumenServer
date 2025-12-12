@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,17 +22,10 @@ class AuthControllerTest extends TestCase
         $this->user = User::factory()->create([
             'email' => 'testuser@example.com'
         ]);
-
-        $this->token = $this->user->createToken('auth-token')->plainTextToken;
+        $this->token = JWTAuth::fromUser($this->user);
     }
 
-    protected function authHeaders(): array
-    {
-        return [
-            'Authorization' => 'Bearer ' . $this->token,
-            'Accept' => 'application/json',
-        ];
-    }
+
 
     public function test_register_success()
     {
