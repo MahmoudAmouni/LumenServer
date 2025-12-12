@@ -22,7 +22,7 @@ class AuthControllerTest extends TestCase
         $this->user = User::factory()->create([
             'email' => 'testuser@example.com'
         ]);
-        $this->token = JWTAuth::fromUser($this->user);
+        // $this->token = JWTAuth::fromUser($this->user);
     }
 
 
