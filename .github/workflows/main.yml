@@ -18,20 +18,27 @@ jobs:
         uses: shivammathur/setup-php@2.36.0
         with: 
           php-version: 8.4.1
+          extensions: pdo, pdo_sqlite
 
-      - name: Install Composer
-        run: composer install --no-interaction --no-progress --optimize-autoloader
+      - name: Setup Composer
+        run: |
+            composer self-update 2.8.3
+            composer --version
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --no-progress
 
       - name: Prepare Laravel 
         run: |
-            composer self-update 2.8.3
-            composer -v
-            composer dump-autoload
             cp .env.example .env
             php artisan key:generate
             php artisan jwt:secret
-            php artisan config:cache
             php artisan config:clear
+            composer dump-autoload --optimize
+            
+      - name: Verify Autoloader
+        run: |
+            php -r "require 'vendor/autoload.php'; echo class_exists('App\\Models\\Offer') ? 'Offer class found' : 'Offer class NOT found'; echo PHP_EOL;"
         
       - name: Run Tests
         run: php artisan test 
