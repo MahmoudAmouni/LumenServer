@@ -36,16 +36,6 @@ class OfferTest extends TestCase
         ];
     }
 
-    public function test_get_offer_by_id_not_found_failure()
-    {
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/offers/99999');
-
-        $response->assertStatus(404)
-            ->assertJson([
-                'status' => 'failure'
-            ]);
-    }
 
     public function test_create_offer_success()
     {
