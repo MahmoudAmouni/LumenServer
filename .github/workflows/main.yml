@@ -34,16 +34,17 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'default-jwt-secret-for-ci-1234567890123456789012' }}
         run: php artisan test
 
-  cd:
-    runs-on: ubuntu-latest
-    needs: ci
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
+  cd: 
+     runs-on: ubuntu-latest
+
+     needs: ci
+
+     steps:
+      - name: Checkout code 
+        uses: actions/checkout@v6.0.1
 
       - name: Connect to EC2 Server
         uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.host_name }}
           username: ${{ secrets.username }}
-          key: ${{ secrets.key }}
