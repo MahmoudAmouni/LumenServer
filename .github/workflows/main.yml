@@ -9,6 +9,7 @@ on:
 jobs: 
   ci:
     runs-on: ubuntu-latest 
+
     steps:
       - name: Checkout code 
         uses: actions/checkout@v6.0.1
@@ -25,8 +26,10 @@ jobs:
         run: |
             composer self-update 2.8.3
             composer -v
+            composer dump-autoload
             cp .env.example .env
             php artisan key:generate
+            php artisan jwt:secret
             php artisan config:cache
             php artisan config:clear
         
