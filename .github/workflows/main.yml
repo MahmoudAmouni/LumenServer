@@ -42,10 +42,10 @@ jobs:
      
      steps:
       - name: Checkout code 
-        uses: action/checkout@v6.0.1
+        uses: actions/checkout@v6.0.1
 
       - name: Connect to EC2 Server
-        uses: appleboy/ssh-actions@v1.2.1
+        uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.host_name }}
           username: ${{ secrets.username }}
