@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\InterviewController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\ScorecardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +40,20 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::put('/candidate-pipeline-stages/{id}', [CandidateController::class, 'createOrUpdateCandidatePipelineStage']);
     Route::get('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
     Route::post('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
+
+    // Job routes
+    Route::get('/jobs', [JobController::class, 'getAllJobs']);
+    Route::get('/jobs/{id}', [JobController::class, 'getJobById']);
+    Route::post('/jobs/add', [JobController::class, 'createJob']);
+    Route::put('/jobs/{id}', [JobController::class, 'updateJob']);
+    Route::get('/jobs/{id}/delete', [JobController::class, 'deleteJob']);
+    Route::post('/jobs/{id}/delete', [JobController::class, 'deleteJob']);
+
+    // Scorecard routes
+    Route::get('/scorecards', [ScorecardController::class, 'getAllScorecards']);
+    Route::get('/scorecards/{id}', [ScorecardController::class, 'getScorecardById']);
+    Route::post('/scorecards/add', [ScorecardController::class, 'createScorecard']);
+    Route::put('/scorecards/{id}', [ScorecardController::class, 'updateScorecard']);
 
 
     Route::middleware(['admin'])->group(function () {
