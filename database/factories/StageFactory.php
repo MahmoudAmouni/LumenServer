@@ -17,7 +17,6 @@ class StageFactory extends Factory
     {
         return [
             'name' => fake()->randomElement(['Applied', 'Phone Screen', 'Interview', 'Offer', 'Hired']),
-            'order' => fake()->numberBetween(1, 10),
         ];
     }
 }

@@ -19,7 +19,6 @@ class Stage extends Model
     
     protected $fillable = [
         'name',
-        'order',
     ];
 
     public function candidatePipelineStages()
