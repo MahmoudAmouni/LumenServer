@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {//
@@ -19,7 +20,7 @@ class AuthService
             'company_id' => $data['company_id'] ?? null,
         ]);
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $token = JWTAuth::fromUser($user);
         $user->load('userType');
 
         return [
@@ -38,7 +39,7 @@ class AuthService
             ]);
         }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $token = JWTAuth::fromUser($user);
         $user->load('userType');
 
         return [
@@ -50,7 +51,7 @@ class AuthService
 
     public function logout(User $user): void
     {
-        $user->currentAccessToken()->delete();
+        JWTAuth::invalidate(JWTAuth::getToken());
     }
 
 
