@@ -12,7 +12,7 @@ jobs:
 
     env:
       APP_ENV: testing
-      JWT_SECRET: ZMbLTbI8ubNegy3CAjfMDB4CY8pAzyCtBwPSXh3blg5s5JsJAHLuixd8xpYjKAQG
+      JWT_SECRET: ci-testing-secret
 
     steps:
       - name: Checkout code
@@ -32,6 +32,14 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+
+          echo "JWT_SECRET=${JWT_SECRET}" >> .env
+
+          php artisan optimize:clear || true
+
+          rm -f bootstrap/cache/config.php bootstrap/cache/services.php
+
+          php -r 'echo "JWT_SECRET=".getenv("JWT_SECRET").PHP_EOL;'
 
       - name: Run tests
         run: php artisan test
