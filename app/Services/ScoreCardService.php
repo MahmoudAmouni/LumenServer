@@ -55,7 +55,7 @@ class ScorecardService
             'scorelabel_name' => ['sometimes', 'string'],
             'scorelabel_max_score' => ['sometimes', 'integer'],
             'scorerate_id' => ['required', 'integer'],
-            'status' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
