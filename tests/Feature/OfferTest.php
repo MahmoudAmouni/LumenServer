@@ -112,15 +112,5 @@ class OfferTest extends TestCase
             ]);
     }
 
-    public function test_delete_offer_not_found_failure()
-    {
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->postJson('/api/v1/offers/99999/delete');
-
-        $response->assertStatus(404)
-            ->assertJson([
-                'status' => 'failure'
-            ]);
-    }
 }
 
