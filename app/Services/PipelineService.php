@@ -21,9 +21,9 @@ class PipelineService
         
         $validator = Validator::make($Stages, [
             'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'job_title' => ['required', 'string', 'max:255'],
-            'stages' => ['required', 'array', 'min:0'],
-            'stages.*.name' => ['required', 'string', 'max:255'],
+            'job_title' => ['required', 'string'],
+            'stages' => ['required', 'array'],
+            'stages.*.name' => ['required', 'string'],
         ]);
         
         if ($validator->fails()) {
@@ -33,7 +33,7 @@ class PipelineService
         $pipeline->job_id = $jobId;
         $pipeline->name = $jobTitle;
         $pipeline->save();
-        
+
         
         $allStagesData = [];
         $stagesWithOrder = [];
