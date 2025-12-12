@@ -26,10 +26,8 @@ jobs:
             composer self-update 2.8.3
             composer -v
             cp .env.example .env
-            php artisan jwt:secret --force
             php artisan key:generate
-            php artisan config:cache
-            php artisan config:clear
+            php artisan jwt:secret --force
         
       - name: Run Tests
         run: php artisan test 
