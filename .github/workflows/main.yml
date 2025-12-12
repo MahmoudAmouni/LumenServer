@@ -29,7 +29,9 @@ jobs:
           php artisan key:generate
           php artisan optimize:clear || true
 
-      - name: Run tests
+      - name: Run tests with JWT_SECRET
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'default-jwt-secret-for-ci-1234567890123456789012' }}
         run: php artisan test
 
   cd:
