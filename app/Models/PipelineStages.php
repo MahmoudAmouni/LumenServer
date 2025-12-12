@@ -14,6 +14,7 @@ class PipelineStages extends Model
     protected $fillable = [
         'stage_id',
         'pipeline_id',
+        'order',
     ];
 
     public function pipeline()

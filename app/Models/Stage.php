@@ -12,7 +12,7 @@ class Stage extends Model
     
     protected static function newFactory()
     {
-        return \Database\Factories\PipelineStageFactory::new();
+        return \Database\Factories\StageFactory::new();
     }
     
     protected $table = 'stages';

@@ -14,7 +14,7 @@ use App\Models\scorelabel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class candidatetest extends TestCase
+class CandidateTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -48,8 +48,7 @@ class candidatetest extends TestCase
             'company_id' => $company->id
         ]);
         $pipeline = Pipeline::factory()->create(['job_id' => $job->id, 'name' => 'Test Pipeline']);
-        $stage = PipelineStage::factory()->create([
-            'pipeline_id' => $pipeline->id,
+        $stage = Stage::factory()->create([
             'name' => 'Applied',
             'order' => 1
         ]);
@@ -57,7 +56,7 @@ class candidatetest extends TestCase
         $user = User::factory()->create(['email' => 'candidate@example.com']);
         
         $candidate = Candidate::factory()->create([
-            'user_id' => $user->id,
+            'recruiter_id' => $user->id,
             'full_name' => 'John Doe',
             'email' => 'john@example.com',
             'level' => 'Senior'
@@ -66,7 +65,7 @@ class candidatetest extends TestCase
         $scorelabel = scorelabel::factory()->create(['label' => 'Excellent', 'max_score' => 10]);
         $evaluator = User::factory()->create(['email' => 'evaluator@example.com']);
         
-        CandidatePipelineStage::factory()->create([
+        CandidateStage::factory()->create([
             'candidate_id' => $candidate->id,
             'pipeline_stage_id' => $stage->id,
             'job_id' => $job->id
@@ -115,8 +114,7 @@ class candidatetest extends TestCase
             'company_id' => $company->id
         ]);
         $pipeline = Pipeline::factory()->create(['job_id' => $job->id, 'name' => 'Test Pipeline']);
-        $stage = PipelineStage::factory()->create([
-            'pipeline_id' => $pipeline->id,
+        $stage = Stage::factory()->create([
             'name' => 'Applied',
             'order' => 1
         ]);
@@ -140,8 +138,7 @@ class candidatetest extends TestCase
             'company_id' => $company->id
         ]);
         $pipeline = Pipeline::factory()->create(['job_id' => $job->id, 'name' => 'Test Pipeline']);
-        $stage = PipelineStage::factory()->create([
-            'pipeline_id' => $pipeline->id,
+        $stage = Stage::factory()->create([
             'name' => 'Applied',
             'order' => 1
         ]);
@@ -149,13 +146,13 @@ class candidatetest extends TestCase
         $user = User::factory()->create(['email' => 'candidate@example.com']);
 
         $candidate = Candidate::factory()->create([
-            'user_id' => $user->id,
+            'recruiter_id' => $user->id,
             'full_name' => 'Update Test Candidate',
             'email' => 'update@example.com',
             'level' => 'Senior'
         ]);
 
-        $candidatePipelineStage = CandidatePipelineStage::factory()->create([
+        $candidatePipelineStage = CandidateStage::factory()->create([
             'candidate_id' => $candidate->id,
             'pipeline_stage_id' => $stage->id,
             'job_id' => $job->id,
@@ -208,8 +205,7 @@ class candidatetest extends TestCase
             'company_id' => $company->id
         ]);
         $pipeline = Pipeline::factory()->create(['job_id' => $job->id, 'name' => 'Test Pipeline']);
-        $stage = PipelineStage::factory()->create([
-            'pipeline_id' => $pipeline->id,
+        $stage = Stage::factory()->create([
             'name' => 'Applied',
             'order' => 1
         ]);
@@ -217,13 +213,13 @@ class candidatetest extends TestCase
         $user = User::factory()->create(['email' => 'candidate@example.com']);
         
         $candidate = Candidate::factory()->create([
-            'user_id' => $user->id,
+            'recruiter_id' => $user->id,
             'full_name' => 'Bob Johnson',
             'email' => 'bob@example.com',
             'level' => 'Junior'
         ]);
         
-        $candidatePipelineStage = CandidatePipelineStage::factory()->create([
+        $candidatePipelineStage = CandidateStage::factory()->create([
             'candidate_id' => $candidate->id,
             'pipeline_stage_id' => $stage->id,
             'job_id' => $job->id
@@ -242,7 +238,7 @@ class candidatetest extends TestCase
     public function test_delete_candidate_pipeline_stage_not_found_failure()
     {
         $response = $this->withHeaders($this->getAuthHeaders())
-            ->deleteJson('/api/v1/candidate-pipeline-stages/99999');
+            ->postJson('/api/v1/candidate-pipeline-stages/99999/delete');
 
         $response->assertStatus(400)
             ->assertJson([
@@ -251,3 +247,4 @@ class candidatetest extends TestCase
     }
 
 }
+
