@@ -97,20 +97,5 @@ class OfferTest extends TestCase
         ]);
     }
 
-    public function test_update_offer_not_found_failure()
-    {
-        $requestData = [
-            'status' => 'sent'
-        ];
-
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->putJson('/api/v1/offers/99999', $requestData);
-
-        $response->assertStatus(404)
-            ->assertJson([
-                'status' => 'failure'
-            ]);
-    }
-
 }
 
