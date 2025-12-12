@@ -4,10 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\PipelineStages;
 
 class Stage extends Model
 {
     use HasFactory;
+    
+    protected static function newFactory()
+    {
+        return \Database\Factories\PipelineStageFactory::new();
+    }
     
     protected $table = 'pipeline_stages';
     
