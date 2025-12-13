@@ -29,8 +29,12 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::get('/pipelines/{pipelineId}/candidates', [CandidateController::class, 'getPipelineCandidates']);
     Route::get('/pipelines/{pipelineId}/stages/{stageId}/candidates', [CandidateController::class, 'getPipelineCandidatesByStage']);
     
-    // Candidates by job and pipeline stage
+    // Candidates by job and optionally by pipeline stage
+    Route::get('/candidates/job/{jobId}', [CandidateController::class, 'getCandidatesByJobIdAndPipelineStage']);
     Route::get('/candidates/job/{jobId}/pipeline-stage/{pipelineStageId}', [CandidateController::class, 'getCandidatesByJobIdAndPipelineStage']);
+    
+    // Candidate profile
+    Route::get('/candidates/{candidateId}/profile', [CandidateController::class, 'getCandidateProfile']);
     
     // Candidate pipeline stages CRUD
     Route::get('/candidate-pipeline-stages', [CandidateController::class, 'getAllCandidatePipelineStages']);

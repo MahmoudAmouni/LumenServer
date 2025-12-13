@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ScoreLabel>
  */
-class ScorelabelFactory extends Factory
+class ScoreLabelFactory extends Factory
 {
     protected $model = ScoreLabel::class;
 

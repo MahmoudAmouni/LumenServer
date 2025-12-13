@@ -11,14 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pipeline_pipeline_stages', function (Blueprint $table) {
-            $table->id();
-           $table->unsignedBigInteger('pipeline_stage_id');
-         $table->unsignedBigInteger('pipeline_id');
-            $table->timestamps();
-         
+            Schema::create('stages', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
 
-        });
+
+                $table->timestamps();
+
+
+
+
+            });
     }
 
     /**
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pipeline_pipeline_stages');
+        Schema::dropIfExists('stages');
     }
 };
