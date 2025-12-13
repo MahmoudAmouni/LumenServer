@@ -25,6 +25,9 @@ class OfferTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Force load Offer model to ensure it's in autoloader
+        class_exists(Offer::class);
+        
         $this->user = User::factory()->create([
             'email' => 'test@example.com' 
         ]);

@@ -27,6 +27,9 @@ class CandidateServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Force load ScoreLabel model to ensure it's in autoloader
+        class_exists(ScoreLabel::class);
+        
         $this->user = User::factory()->create([
             'email' => 'test@example.com' 
         ]);
