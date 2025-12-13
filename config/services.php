@@ -13,6 +13,9 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'n8n' => [
+        'excel_parse_webhook' => env('N8N_EXCEL_PARSE_WEBHOOK'),
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),

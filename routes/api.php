@@ -2,19 +2,22 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
+use App\Http\Controllers\PipelineController;
 use Illuminate\Support\Facades\Route;
 
-// Auth routes (no authentication required)
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/error', function () {
-    return response()->json([
-        'status' => 'failure',
-        'payload' => ['message' => 'Unauthorized']
-    ], 401);
-});
+
+
+
+Route::post('/pipelines', [PipelineController::class, 'store']);
+Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
+
+
+Route::post('/login', [AuthController::class, "login"]);
+Route::post('/register', [AuthController::class, "register"]);
+Route::get('/error', [AuthController::class, "displayError"])->name("login");
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
 
