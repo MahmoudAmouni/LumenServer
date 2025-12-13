@@ -87,7 +87,7 @@ class InterviewControllerTest extends TestCase
             $this->authHeaders()
         );
 
-        $response
+        $response->assertStatus(200)
             ->assertJson([
                 'status' => 'success'
             ])
