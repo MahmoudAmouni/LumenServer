@@ -27,11 +27,6 @@ class CandidateServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Force load ScoreLabel model - ensures autoloader has it before service uses it
-        if (!class_exists(ScoreLabel::class)) {
-            require_once app_path('Models/ScoreLabel.php');
-        }
-        
         $this->user = User::factory()->create([
             'email' => 'test@example.com' 
         ]);
