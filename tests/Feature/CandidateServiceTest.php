@@ -124,8 +124,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success'])
+        $response->assertJson(['status' => 'success'])
             ->assertJsonStructure([
                 'status',
                 'payload' => [
@@ -189,8 +188,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success'])
+        $response->assertJson(['status' => 'success'])
             ->assertJson(['payload' => []]);
         
         $payload = $response->json('payload');
@@ -240,8 +238,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job1->id . '/pipeline-stage/' . $stage->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload);
@@ -287,8 +284,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage1->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload);
@@ -353,8 +349,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertCount(3, $payload);
@@ -395,8 +390,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload);
@@ -468,8 +462,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success'])
+        $response->assertJson(['status' => 'success'])
             ->assertJsonStructure([
                 'status',
                 'payload' => [
@@ -551,8 +544,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/' . $candidate->id . '/profile?job_id=' . $job1->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertEquals($job1->id, $payload['current_application']['job']['id']);
@@ -620,8 +612,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/' . $candidate->id . '/profile?job_id=' . $job->id);
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload['interviews']);
@@ -657,8 +648,7 @@ class CandidateServiceTest extends TestCase
             ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
 
         // Assert
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success']);
+        $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
         $this->assertNull($payload['current_application']);

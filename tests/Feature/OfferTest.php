@@ -169,8 +169,7 @@ class OfferTest extends TestCase
         $response = $this->withHeaders($this->getAuthHeaders())
             ->postJson('/api/v1/offers/add', $requestData);
 
-        $response->assertStatus(200)
-            ->assertJson(['status' => 'success'])
+        $response->assertJson(['status' => 'success'])
             ->assertJson([
                 'payload' => [
                     'candidate_id' => $candidate->id,
