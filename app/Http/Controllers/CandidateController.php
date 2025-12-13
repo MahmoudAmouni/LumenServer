@@ -66,10 +66,17 @@ class CandidateController extends Controller
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
-    public function getCandidatesByJobIdAndPipelineStage($jobId, $pipelineStageId)
+    public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null)
     {
         try {
-            return $this->responseJSON($this->service->getCandidatesByJobIdAndPipelineStage((int) $jobId, (int) $pipelineStageId));
+            // If pipelineStageId is not provided in route, check query parameter
+            if ($pipelineStageId === null) {
+                $pipelineStageId = $request->query('pipeline_stage_id') ? (int) $request->query('pipeline_stage_id') : null;
+            } else {
+                $pipelineStageId = (int) $pipelineStageId;
+            }
+            
+            return $this->responseJSON($this->service->getCandidatesByJobIdAndPipelineStage((int) $jobId, $pipelineStageId));
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
@@ -107,6 +114,18 @@ class CandidateController extends Controller
         try {
             $this->service->deleteCandidatePipelineStage((int) $id);
             return $this->responseJSON(null, "success", 204);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+    public function getCandidateProfile(Request $request, $candidateId)
+    {
+        try {
+            $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
+            return $this->responseJSON($this->service->getCandidateProfile((int) $candidateId, $jobId));
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 404);
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
