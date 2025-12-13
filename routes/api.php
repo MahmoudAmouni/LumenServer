@@ -52,5 +52,7 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::put('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
     Route::get('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
     Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+      // Offer Stage Workflow (triggered when candidate moves to "Offer" stage)
+    Route::post('/offer-stage-workflow/trigger', [OfferStageWorkflowController::class, 'trigger']);
     
 });
