@@ -187,4 +187,17 @@ class PipelineService
             throw new ValidationException($validator);
         }
     }
+
+
+    public function getPipelineStagesByJobId(int $job_id)
+    {
+        return Pipeline::where('job_id', $job_id)
+            ->with([
+                'pipelineStages' => function ($q) {
+                    $q->orderBy('order');
+                }
+            ])
+            ->firstOrFail();
+    }
+
 }

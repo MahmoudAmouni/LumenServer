@@ -11,10 +11,9 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::post('/pipelines', [PipelineController::class, 'store']);
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 
-
+Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
 Route::get('/error', [AuthController::class, "displayError"])->name("login");
