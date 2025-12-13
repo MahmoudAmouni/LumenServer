@@ -79,7 +79,7 @@ public function offersAsRecruiter()
 
 public function copilotQueriesAsRecruiter()
 {
-    return $this->hasMany(CopilotQuery::class, 'query_by_recruiter_id');
+    return $this->hasMany(CopilotQuery::class, 'recruiter_id');
 }
 
 /**

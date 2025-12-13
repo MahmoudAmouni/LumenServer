@@ -13,9 +13,9 @@ class CopilotQuery extends Model
     'job_id',
     'query_text',
     'response_text',
-    'query_by_recruiter_id',
+    'recruiter_id',
     'citation_text',
-    'source_id',
+    'source',
 ];
 
 public function candidate()
@@ -28,8 +28,8 @@ public function job()
     return $this->belongsTo(Job::class, 'job_id');
 }
 
-public function queryByRecruiter()
+public function recruiter()
 {
-    return $this->belongsTo(User::class, 'query_by_recruiter_id');
+    return $this->belongsTo(User::class, 'recruiter_id');
 }
 }

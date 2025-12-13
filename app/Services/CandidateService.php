@@ -2,62 +2,28 @@
 
 namespace App\Services;
 
-use App\Models\Pipeline;
 use App\Models\CandidatePipelineStage;
+use App\Models\Candidate;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class CandidateService
 {
-    public function getAllPipelines(?int $jobId = null, ?int $companyId = null)
-    {
-        $query = Pipeline::with(['job.company', 'job']);
-
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
-        }
-
-        if ($companyId !== null) {
-            $query->whereHas('job', function ($q) use ($companyId) {
-
-            });
-        }
-
-        return $query->get();
-    }
-
-    public function getPipelineById(int $id)
-    {
-        $pipeline = Pipeline::with(['job.company', 'job'])->find($id);
-        if (!$pipeline) {
-            throw new ModelNotFoundException("Pipeline not found", 404);
-        }
-        return $pipeline;
-    }
-
-    public function getPipelinesWithStages(?int $jobId = null, ?int $companyId = null)
-    {
-        $query = Pipeline::with([
-            'job.company',
-            'job',
-            'stages'
-        ]);
-
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
-        }
-
-        if ($companyId !== null) {
-            $query->whereHas('job', function ($q) use ($companyId) {
-                $q->where('company_id', $companyId);
-            });
-        }
-
-        return $query->get();
-    }
-
-
     public function getCandidatesByJobIdAndPipelineStage(int $jobId, int $pipelineStageId)
     {
+        $validator = Validator::make([
+            'job_id' => $jobId,
+            'pipeline_stage_id' => $pipelineStageId,
+        ], [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'pipeline_stage_id' => ['required', 'integer', 'exists:stages,id'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
         $candidatePipelineStages = CandidatePipelineStage::with([
             'candidate',
             'candidate.scorecards' => function ($query) use ($jobId) {
@@ -68,112 +34,116 @@ class CandidateService
         ])
         ->where('job_id', $jobId)
         ->where('pipeline_stage_id', $pipelineStageId)
+        ->orderBy('moved_at', 'desc')
         ->get();
 
         return $candidatePipelineStages->map(function ($item) {
+            $candidate = $item->candidate;
+            $pipelineStage = $item->pipelineStage;
+            $scorecards = $candidate->scorecards ?? collect([]);
+
             return [
                 'candidate_pipeline_stage_id' => $item->id,
                 'candidate' => [
-                    'id' => $item->candidate->id,
-                    'name' => $item->candidate->full_name,
-                    'email' => $item->candidate->email,
+                    'id' => $candidate->id,
+                    'name' => $candidate->full_name,
+                    'email' => $candidate->email,
                 ],
                 'pipeline_stage' => [
-                    'id' => $item->pipelineStage->id,
-                    'name' => $item->pipelineStage->name,
-                    'order' => $item->pipelineStage->order,
+                    'id' => $pipelineStage->id ?? null,
+                    'name' => $pipelineStage->name ?? null,
                 ],
-                'scorecards' => $item->candidate->scorecards->map(function ($scorecard) {
+                'scorecards' => $scorecards->map(function ($scorecard) {
                     return [
                         'scorerate_id' => $scorecard->scorerate_id,
-                        'scorelabel' => $scorecard->scorelabel ? $scorecard->scorelabel->label : null,
-                        'max_score' => $scorecard->scorelabel ? $scorecard->scorelabel->max_score : null,
+                        'scorelabel' => $scorecard->scorelabel->name ?? null,
+                        'max_score' => $scorecard->scorelabel->max_score ?? null,
                     ];
-                }),
+                })->toArray(),
                 'moved_at' => $item->moved_at,
                 'notes' => $item->notes,
             ];
         });
     }
 
-    public function getPipelineCandidates(int $pipelineId, ?int $jobId = null)
+    public function getCandidateProfile(int $candidateId, ?int $jobId = null)
     {
-        $pipeline = $this->getPipelineById($pipelineId);
+        $validator = Validator::make([
+            'candidate_id' => $candidateId,
+            'job_id' => $jobId,
+        ], [
+            'candidate_id' => ['required', 'integer'],
+            'job_id' => ['nullable', 'integer', 'exists:jobs,id'],
+        ]);
 
-        $query = CandidatePipelineStage::with([
-            'candidate.user',
-            'pipelineStage',
-            'job'
-        ])->whereHas('pipelineStage', function ($q) use ($pipelineId) {
-            $q->where('pipeline_id', $pipelineId);
-        });
-
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
         }
 
-        return $query->get();
-    }
-
-    public function getPipelineCandidatesByStage(int $pipelineId, int $stageId, ?int $jobId = null)
-    {
-        $pipeline = $this->getPipelineById($pipelineId);
-
-        $query = CandidatePipelineStage::with([
-            'candidate.user',
-            'pipelineStage',
-            'job'
-        ])->where('pipeline_stage_id', $stageId)
-          ->whereHas('pipelineStage', function ($q) use ($pipelineId) {
-              $q->where('pipeline_id', $pipelineId);
-          });
-
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
-        }
-
-        return $query->get();
-    }
-
-    public function getAllCandidatePipelineStages(?int $id = null)
-    {
-        if ($id === null) {
-            return CandidatePipelineStage::with(['candidate.user', 'pipelineStage', 'job'])->get();
-        }
-        $item = CandidatePipelineStage::with(['candidate.user', 'pipelineStage', 'job'])->find($id);
-        if (!$item) {
-            throw new ModelNotFoundException("CandidatePipelineStage not found", 404);
-        }
-        return $item;
-    }
-
-    public function createOrUpdateCandidatePipelineStage(array $data, ?int $id = null)
-    {
-        if ($id === null) {
-            $item = new CandidatePipelineStage();
-        } else {
-            $item = CandidatePipelineStage::find($id);
-            if (!$item) {
-                throw new ModelNotFoundException("CandidatePipelineStage not found", 404);
+        $candidate = Candidate::with([
+            'recruiter',
+            'candidatePipelineStages' => function ($query) use ($jobId) {
+                if ($jobId !== null) {
+                    $query->where('job_id', $jobId);
+                }
+                $query->with(['pipelineStage', 'job.company'])->latest('moved_at');
+            },
+            'candidateJobs' => function ($query) use ($jobId) {
+                if ($jobId !== null) {
+                    $query->where('job_id', $jobId);
+                }
+                $query->with(['job.company']);
+            },
+            'scorecards' => function ($query) use ($jobId) {
+                if ($jobId !== null) {
+                    $query->where('job_id', $jobId);
+                }
+                $query->with('scorelabel');
+            },
+            'interviews' => function ($query) use ($jobId) {
+                if ($jobId !== null) {
+                    $query->whereHas('scorecards', function ($q) use ($jobId) {
+                        $q->where('job_id', $jobId);
+                    });
+                }
+                $query->with('interviewer');
+            },
+            'offers' => function ($query) use ($jobId) {
+                if ($jobId !== null) {
+                    $query->where('job_id', $jobId);
+                }
+                $query->with('job');
             }
+        ])->find($candidateId);
+
+        if (!$candidate) {
+            throw new ModelNotFoundException("Candidate not found", 404);
         }
-        $item->candidate_id = $data['candidate_id'] ?? $item->candidate_id;
-        $item->pipeline_stage_id = $data['pipeline_stage_id'] ?? $item->pipeline_stage_id;
-        $item->job_id = $data['job_id'] ?? $item->job_id;
-        $item->moved_at = $data['moved_at'] ?? $item->moved_at;
-        $item->notes = $data['notes'] ?? $item->notes;
-        $item->save();
-        return $item->load(['candidate.user', 'pipelineStage', 'job']);
+
+        $currentPipelineStage = $this->getCurrentPipelineStage($candidate, $jobId);
+        $job = $currentPipelineStage ? $currentPipelineStage->job : null;
+        $company = $job ? $job->company : null;
+
+        return [
+            ...$candidate->only(['id', 'full_name', 'email', 'phone_number', 'age', 'location', 'level', 'github_url', 'linkedin_url', 'cv_path']),
+            'recruiter' => $candidate->recruiter ? ['id' => $candidate->recruiter->id, 'name' => $candidate->recruiter->name, 'email' => $candidate->recruiter->email] : null,
+            'current_application' => $currentPipelineStage ? ['candidate_pipeline_stage_id' => $currentPipelineStage->id, 'job' => [...$job->only(['id', 'title', 'description', 'location', 'employment_type', 'level']), 'company' => $company ? $company->name : null], 'moved_at' => $currentPipelineStage->moved_at, 'notes' => $currentPipelineStage->notes] : null,
+            'interviews' => $candidate->interviews->map(fn($interview) => [...$interview->only(['id', 'candidate_id', 'interviewer_id', 'interview_type_id', 'notes', 'duration', 'scheduled_at', 'status']), 'interviewer' => $interview->interviewer ? ['id' => $interview->interviewer->id, 'name' => $interview->interviewer->name, 'email' => $interview->interviewer->email] : null]),
+            'scorecards' => $candidate->scorecards->map(fn($scorecard) => [...$scorecard->only(['id', 'candidate_id', 'job_id', 'interview_id', 'scorerate_id', 'scorelabel_id', 'status']), 'scorelabel' => $scorecard->scorelabel ? ['id' => $scorecard->scorelabel->id, 'name' => $scorecard->scorelabel->name, 'max_score' => $scorecard->scorelabel->max_score] : null]),
+        ];
     }
 
-    public function deleteCandidatePipelineStage(int $id)
+    private function getCurrentPipelineStage(Candidate $candidate, ?int $jobId = null)
     {
-        $item = CandidatePipelineStage::find($id);
-        if (!$item) {
-            throw new ModelNotFoundException("CandidatePipelineStage not found", 404);
+        if ($jobId !== null) {
+            return $candidate->candidatePipelineStages
+                ->where('job_id', $jobId)
+                ->sortByDesc('moved_at')
+                ->first();
         }
-        $item->delete();
-        return true;
+
+        return $candidate->candidatePipelineStages
+            ->sortByDesc('moved_at')
+            ->first();
     }
 }
-
