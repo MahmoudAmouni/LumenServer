@@ -15,6 +15,7 @@ return [
     */
     'n8n' => [
         'excel_parse_webhook' => env('N8N_EXCEL_PARSE_WEBHOOK'),
+        'summarize_notes_webhook' => env('N8N_SUMMARIZE_NOTES_WEBHOOK')
     ],
 
     'postmark' => [
