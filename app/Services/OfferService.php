@@ -10,69 +10,70 @@ use Illuminate\Support\Facades\Log;
 
 class OfferService
 {
-    public function getAllOffers(?int $candidateId = null, ?int $jobId = null, ?string $status = null, ?int $recruiterId = null)
+    /**
+     * Send offers to all candidates in the "offer" stage for a specific job
+     * 
+     * @param int $jobId The job ID
+     * @param int $pipelineStageId The pipeline stage ID
+     * @return array Results of sending offers to candidates
+     */
+    public function sendOffersToCandidatesInOfferStage(int $jobId, int $pipelineStageId)
     {
-        $query = offer::with(['candidate', 'job', 'recruiter']);
+        $candidatePipelineStages = CandidatePipelineStage::with([
+            'candidate',
+            'pipelineStage',
+            'job'
+        ])
+        ->where('job_id', $jobId)
+        ->where('pipeline_stage_id', $pipelineStageId)
+        ->get();
 
-        if ($candidateId !== null) {
-            $query->where('candidate_id', $candidateId);
+        if ($candidatePipelineStages->isEmpty()) {
+            return [
+                'status' => 'no_candidates',
+                'message' => 'No candidates found in the specified stage',
+                'results' => []
+            ];
         }
 
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
+        // Check if the stage is "offer"
+        $firstStage = $candidatePipelineStages->first()->pipelineStage;
+        if (!$firstStage || strtolower($firstStage->name) !== 'offer') {
+            return [
+                'status' => 'not_offer_stage',
+                'message' => 'The specified stage is not an "offer" stage',
+                'results' => []
+            ];
         }
 
-        if ($status !== null) {
-            $query->where('status', $status);
-        }
-
-        if ($recruiterId !== null) {
-            $query->where('recruiter_id', $recruiterId);
-        }
-
-        return $query->get();
-    }//
-
-    public function getOfferById(int $id)
-    {
-        $offer = Offer::with(['candidate', 'job', 'recruiter'])->find($id);
-        if (!$offer) {
-            throw new ModelNotFoundException("Offer not found", 404);
-        }
-        return $offer;
-    }
-
-    public function createOrUpdateOffer(array $data, ?int $id = null)
-    {
-        if ($id === null) {
-            $offer = new Offer();
-        } else {
-            $offer = Offer::find($id);
-            if (!$offer) {
-                throw new ModelNotFoundException("Offer not found", 404);
+        $results = [];
+        foreach ($candidatePipelineStages as $candidatePipelineStage) {
+            try {
+                $workflowResult = $this->triggerOfferStageWorkflow($candidatePipelineStage->id);
+                $results[] = [
+                    'candidate_id' => $candidatePipelineStage->candidate_id,
+                    'candidate_pipeline_stage_id' => $candidatePipelineStage->id,
+                    'status' => 'success',
+                    'workflow_result' => $workflowResult
+                ];
+            } catch (\Exception $e) {
+                Log::error('Failed to send offer to candidate ' . $candidatePipelineStage->candidate_id . ': ' . $e->getMessage());
+                $results[] = [
+                    'candidate_id' => $candidatePipelineStage->candidate_id,
+                    'candidate_pipeline_stage_id' => $candidatePipelineStage->id,
+                    'status' => 'failed',
+                    'error' => $e->getMessage()
+                ];
             }
         }
-        $offer->candidate_id = $data['candidate_id'] ?? $offer->candidate_id;
-        $offer->job_id = $data['job_id'] ?? $offer->job_id;
-        $offer->salary = $data['salary'] ?? $offer->salary;
-        $offer->start_date = $data['start_date'] ?? $offer->start_date;
-        $offer->contract_type = $data['contract_type'] ?? $offer->contract_type;
-        $offer->offer_letter_template = $data['offer_letter_template'] ?? $offer->offer_letter_template;
-        $offer->status = $data['status'] ?? $offer->status ?? 'draft';
-        $offer->recruiter_id = $data['recruiter_id'] ?? $offer->recruiter_id;
-        $offer->save();
-        return $offer->load(['candidate', 'job', 'recruiter']);
+
+        return [
+            'status' => 'completed',
+            'message' => 'Offer workflow triggered for ' . count($results) . ' candidate(s)',
+            'results' => $results
+        ];
     }
 
-    public function deleteOffer(int $id)
-    {
-        $offer = Offer::find($id);
-        if (!$offer) {
-            throw new ModelNotFoundException("Offer not found", 404);
-        }
-        $offer->delete();
-        return true;
-    }
     public function triggerOfferStageWorkflow(int $candidatePipelineStageId)
     {
         $candidatePipelineStage = CandidatePipelineStage::with(['candidate', 'pipelineStage', 'job'])
@@ -158,7 +159,6 @@ class OfferService
         return $workflowResults;
     }
 
-
     private function generateOfferPacket(Offer $offer)
     {
         $offer->load(['candidate', 'job', 'recruiter']);
@@ -189,13 +189,11 @@ class OfferService
         ];
     }
 
-   
     private function scheduleReminders(Offer $offer, $candidate, $recruiter)
     {
         $reminders = [];
 
         if ($recruiter) {
- 
             $reminders[] = [
                 'type' => 'recruiter',
                 'user_id' => $recruiter->id,
@@ -205,9 +203,7 @@ class OfferService
             ];
         }
 
-        // Schedule reminder for candidate
         if ($candidate) {
-            // TODO: Implement actual reminder scheduling for candidate
             $jobTitle = $offer->job->title ?? 'the position';
             $reminders[] = [
                 'type' => 'candidate',
@@ -221,21 +217,8 @@ class OfferService
         return $reminders;
     }
 
-    /**
-     * Track offer status changes
-     */
     private function trackOfferStatusChange(Offer $offer, string $event)
     {
-        // TODO: Implement actual status tracking
-        // This could log to a separate table, use Laravel's activity log, or an event system
-        // Example:
-        // OfferStatusHistory::create([
-        //     'offer_id' => $offer->id,
-        //     'status' => $offer->status,
-        //     'event' => $event,
-        //     'changed_at' => now()
-        // ]);
-
         Log::info("Offer status change tracked", [
             'offer_id' => $offer->id,
             'candidate_id' => $offer->candidate_id,
