@@ -5,6 +5,9 @@ namespace Database\Factories;
 use App\Models\CompanyName;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CompanyName>
+ */
 class CompanyNameFactory extends Factory
 {
     protected $model = CompanyName::class;
@@ -12,7 +15,8 @@ class CompanyNameFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company,
-        ];//
+            'name' => fake()->company(),
+        ];
     }
 }
+
