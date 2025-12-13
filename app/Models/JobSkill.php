@@ -11,7 +11,7 @@ class JobSkill extends Model
   protected $fillable = [
     'job_id',
     'skill_id',
-    'Type',
+    'type',
 ];
 
 public function job()

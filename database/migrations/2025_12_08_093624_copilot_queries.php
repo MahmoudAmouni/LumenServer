@@ -19,7 +19,7 @@ return new class extends Migration
               $table->text('response_text');
               $table->unsignedBigInteger('recruiter_id');
               $table->text('citation_text')->nullable();
-              $table->unsignedBigInteger('source_id')->nullable();
+              $table->unsignedBigInteger('source')->nullable();
                 $table->timestamps();
             });
     }

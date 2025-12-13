@@ -9,11 +9,12 @@ class PipelineStages extends Model
 {
     use HasFactory;
     
-    protected $table = 'pipeline_pipeline_stages';
+    protected $table = 'pipeline_stages';
     
     protected $fillable = [
-        'pipeline_stage_id',
+        'stage_id',
         'pipeline_id',
+        'order',
     ];
 
     public function pipeline()
@@ -23,6 +24,6 @@ class PipelineStages extends Model
 
     public function stage()
     {
-        return $this->belongsTo(Stage::class, 'pipeline_stage_id');
+        return $this->belongsTo(Stage::class, 'stage_id');
     }
 }

@@ -69,5 +69,17 @@ class OfferController extends Controller
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
+
+    public function triggerOfferStageWorkflow(Request $request, $candidatePipelineStageId)
+    {
+        try {
+            $result = $this->service->triggerOfferStageWorkflow((int) $candidatePipelineStageId);
+            return $this->responseJSON($result);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 404);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
 }
 

@@ -27,6 +27,6 @@ class Pipeline extends Model
 
     public function stages()
     {
-        return $this->hasManyThrough(Stage::class, PipelineStages::class, 'pipeline_id', 'id', 'id', 'pipeline_stage_id')->orderBy('order');
+        return $this->hasManyThrough(Stage::class, PipelineStages::class, 'pipeline_id', 'id', 'id', 'stage_id')->orderBy('order');
     }
 }
