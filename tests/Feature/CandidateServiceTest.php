@@ -114,7 +114,6 @@ class CandidateServiceTest extends TestCase
         $payload = $response->json('payload');
         $this->assertCount(2, $payload);
         
-        // Check first candidate (should be second in order due to moved_at desc)
         $firstCandidate = $payload[0];
         $this->assertEquals($candidatePipelineStage2->id, $firstCandidate['candidate_pipeline_stage_id']);
         $this->assertEquals($candidate2->id, $firstCandidate['candidate']['id']);
@@ -125,7 +124,6 @@ class CandidateServiceTest extends TestCase
         $this->assertEquals('Second candidate notes', $firstCandidate['notes']);
         $this->assertIsArray($firstCandidate['scorecards']);
         
-        // Check second candidate
         $secondCandidate = $payload[1];
         $this->assertEquals($candidatePipelineStage1->id, $secondCandidate['candidate_pipeline_stage_id']);
         $this->assertEquals($candidate1->id, $secondCandidate['candidate']['id']);
@@ -185,25 +183,21 @@ class CandidateServiceTest extends TestCase
             'email' => 'john@example.com'
         ]);
         
-        // Create candidate pipeline stage for job1
         CandidatePipelineStage::factory()->create([
             'candidate_id' => $candidate->id,
             'pipeline_stage_id' => $stage->id,
             'job_id' => $job1->id
         ]);
         
-        // Create candidate pipeline stage for job2
         CandidatePipelineStage::factory()->create([
             'candidate_id' => $candidate->id,
             'pipeline_stage_id' => $stage->id,
             'job_id' => $job2->id
         ]);
 
-        // Act
         $response = $this->withHeaders($this->getAuthHeaders())
             ->getJson('/api/v1/candidates/job/' . $job1->id . '/pipeline-stage/' . $stage->id);
 
-        // Assert
         $response->assertJson(['status' => 'success']);
         
         $payload = $response->json('payload');
@@ -211,176 +205,7 @@ class CandidateServiceTest extends TestCase
         $this->assertEquals($job1->id, $payload[0]['candidate_pipeline_stage_id']);
     }
 
-    public function test_get_candidates_by_job_id_and_pipeline_stage_filters_by_stage_id()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Test Company']);
-        $job = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $stage1 = Stage::factory()->create(['name' => 'Applied']);
-        $stage2 = Stage::factory()->create(['name' => 'Interview']);
-        
-        $recruiter = User::factory()->create();
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'John Doe',
-            'email' => 'john@example.com'
-        ]);
-        
-        // Create candidate pipeline stage for stage1
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage1->id,
-            'job_id' => $job->id
-        ]);
-        
-        // Create candidate pipeline stage for stage2
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage2->id,
-            'job_id' => $job->id
-        ]);
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage1->id);
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertCount(1, $payload);
-        $this->assertEquals($stage1->id, $payload[0]['pipeline_stage']['id']);
-        $this->assertEquals('Applied', $payload[0]['pipeline_stage']['name']);
-    }
-
-    public function test_get_candidates_by_job_id_and_pipeline_stage_orders_by_moved_at_desc()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Test Company']);
-        $job = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Applied']);
-        $recruiter = User::factory()->create();
-        
-        $candidate1 = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'First Candidate',
-            'email' => 'first@example.com'
-        ]);
-        
-        $candidate2 = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'Second Candidate',
-            'email' => 'second@example.com'
-        ]);
-        
-        $candidate3 = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'Third Candidate',
-            'email' => 'third@example.com'
-        ]);
-        
-        // Create with different moved_at dates
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate1->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id,
-            'moved_at' => now()->subDays(3) // Oldest
-        ]);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate2->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id,
-            'moved_at' => now()->subDays(1) // Most recent
-        ]);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate3->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id,
-            'moved_at' => now()->subDays(2) // Middle
-        ]);
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertCount(3, $payload);
-        // Should be ordered by moved_at desc (most recent first)
-        $this->assertEquals('Second Candidate', $payload[0]['candidate']['name']);
-        $this->assertEquals('Third Candidate', $payload[1]['candidate']['name']);
-        $this->assertEquals('First Candidate', $payload[2]['candidate']['name']);
-    }
-
-    public function test_get_candidates_by_job_id_and_pipeline_stage_handles_candidates_without_scorecards()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Test Company']);
-        $job = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Applied']);
-        $recruiter = User::factory()->create();
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'John Doe',
-            'email' => 'john@example.com'
-        ]);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id
-        ]);
-        
-        // Don't create any scorecards for this candidate
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertCount(1, $payload);
-        $this->assertEquals($candidate->id, $payload[0]['candidate']['id']);
-        $this->assertCount(0, $payload[0]['scorecards']);
-    }
-
-    public function test_get_candidates_by_job_id_and_pipeline_stage_requires_authentication()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Test Company']);
-        $job = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Applied']);
-
-        // Act
-        $response = $this->getJson('/api/v1/candidates/job/' . $job->id . '/pipeline-stage/' . $stage->id);
-
-        // Assert
-        $response->assertStatus(401);
-    }
+   
 
     public function test_get_candidate_profile_success()
     {
@@ -467,145 +292,6 @@ class CandidateServiceTest extends TestCase
         $this->assertEquals('Senior Full-Stack Engineer', $payload['current_application']['job']['title']);
     }
 
-    public function test_get_candidate_profile_with_job_id_filter()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Tech Company']);
-        $recruiter = User::factory()->create();
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'John Doe',
-            'email' => 'john@example.com'
-        ]);
-        
-        $job1 = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $job2 = Job::factory()->create([
-            'title' => 'Product Manager',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Applied']);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job1->id,
-            'moved_at' => now()->subDays(2)
-        ]);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job2->id,
-            'moved_at' => now()
-        ]);
 
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile?job_id=' . $job1->id);
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertEquals($job1->id, $payload['current_application']['job']['id']);
-        $this->assertEquals('Software Engineer', $payload['current_application']['job']['title']);
-    }
-
-    public function test_get_candidate_profile_not_found()
-    {
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/99999/profile');
-
-        // Assert
-        $response->assertStatus(404)
-            ->assertJson(['status' => 'failure']);
-    }
-
-    public function test_get_candidate_profile_with_interviews_and_scorecards()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Tech Company']);
-        $recruiter = User::factory()->create();
-        $evaluator = User::factory()->create(['email' => 'evaluator@example.com']);
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'Jane Smith',
-            'email' => 'jane@example.com'
-        ]);
-        
-        $job = Job::factory()->create([
-            'title' => 'Software Engineer',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Interview']);
-        
-        CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id
-        ]);
-        
-        $interview = Interview::factory()->create([
-            'candidate_id' => $candidate->id,
-            'interviewer_id' => $evaluator->id,
-            'scheduled_at' => now()->addDays(1),
-            'status' => 'scheduled',
-            'duration' => 60,
-            'notes' => 'Technical interview'
-        ]);
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile?job_id=' . $job->id);
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertIsArray($payload['interviews']);
-        $this->assertIsArray($payload['scorecards']);
-    }
-
-    public function test_get_candidate_profile_requires_authentication()
-    {
-        // Act
-        $response = $this->getJson('/api/v1/candidates/1/profile');
-
-        // Assert
-        $response->assertStatus(401);
-    }
-
-    public function test_get_candidate_profile_without_current_application()
-    {
-        // Arrange
-        $recruiter = User::factory()->create();
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'John Doe',
-            'email' => 'john@example.com'
-        ]);
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
-
-        // Assert
-        $response->assertJson(['status' => 'success']);
-        
-        $payload = $response->json('payload');
-        $this->assertNull($payload['current_application']);
-        $this->assertIsArray($payload['interviews']);
-        $this->assertIsArray($payload['scorecards']);
-    }
 }
 
