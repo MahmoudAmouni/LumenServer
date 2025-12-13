@@ -2,14 +2,16 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
-$baseurl = env('APP_URL', 'http://localhost');
 
 
+
+Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 
 
 Route::post('/login', [AuthController::class, "login"]);
@@ -20,7 +22,7 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
 
     Route::post("/update/{id}", [InterviewController::class,"update"]);
 
-     Route::get('/pipelines', [CandidateController::class, 'getAllPipelines']);
+    Route::get('/pipelines', [CandidateController::class, 'getAllPipelines']);
     Route::get('/pipelines/{id}', [CandidateController::class, 'getPipelineById']);
     Route::get('/pipelines-with-stages', [CandidateController::class, 'getPipelinesWithStages']);
     
