@@ -26,7 +26,6 @@ class CandidateImportN8nService
             ];
         }
 
-        // 1) Send Excel to n8n (Laravel does NOT parse Excel)
         $n8nUrl = config('services.n8n.excel_parse_webhook');
 
         $res = Http::timeout(180)
@@ -82,7 +81,7 @@ class CandidateImportN8nService
             }
 
             $item = [
-                'recruiter_id' => (int) $recruiterId, // change it to recruiter
+                'recruiter_id' => (int) $recruiterId, 
                 'full_name' => $fullName,
                 'email' => $email,
                 'phone_number' => $row['phone_number'] ?? null,
@@ -120,10 +119,8 @@ class CandidateImportN8nService
 
         DB::beginTransaction();
         try {
-            // 2) BULK INSERT
             Candidate::insert($insertRows);
 
-            // 3) Fetch inserted candidates IDs (batch-safe)
             $emails = array_values(array_unique(array_column($meta, 'email')));
 
             $query = Candidate::query()
@@ -141,7 +138,6 @@ class CandidateImportN8nService
                 $emailToId[$email] = $group->max('id');
             }
 
-            // 4) Download CVs + update cv_path
             foreach ($meta as $m) {
                 $email = $m['email'];
                 $candidateId = $emailToId[$email] ?? null;

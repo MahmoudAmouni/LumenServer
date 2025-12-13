@@ -16,7 +16,6 @@ class DriveCvService
             throw new \InvalidArgumentException("Invalid Google Drive URL");
         }
 
-        // Works for "Anyone with the link" Drive files
         $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
 
         $filename = "candidate_{$candidateId}_" . Str::random(10) . ".pdf";
@@ -36,7 +35,6 @@ class DriveCvService
             throw new \RuntimeException("Drive download failed: HTTP " . $res->status());
         }
 
-        // If private, Drive often returns HTML instead of PDF
         $head = @file_get_contents($tmpPath, false, null, 0, 4);
         if ($head !== '%PDF') {
             @unlink($tmpPath);
@@ -46,7 +44,7 @@ class DriveCvService
         $storedPath = Storage::disk('public')->putFileAs('cvs', new File($tmpPath), $filename);
         @unlink($tmpPath);
 
-        return $storedPath; // e.g. cvs/candidate_1_xxx.pdf
+        return $storedPath; 
     }
 
     private function extractDriveFileId(string $url): ?string

@@ -6,6 +6,7 @@ use App\Services\PipelineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
 
 class PipelineController extends Controller
@@ -15,22 +16,16 @@ class PipelineController extends Controller
     ) {
     }
 
-    public function store(Request $request): JsonResponse
+    public function getStagesByJobId(int $job_id): JsonResponse
     {
         try {
-            $pipeline = $this->pipelineService->createPipeline(
-                (int) $request->input('job_id'),
-                (string) $request->input('job_title'),
-                (array) $request->input('stages', [])
-            );
+            $pipeline = $this->pipelineService->getPipelineStagesByJobId($job_id);
+            return $this->responseJSON($pipeline, 'success', 200);
 
-            return $this->responseJSON($pipeline, 'success', 201);
-
-        } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), 'failure', 422);
-
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON('NotFound', 'Pipeline not found for this job', 404);
         } catch (Exception $e) {
-            return $this->responseJSON('PipelineError', 'Create pipeline failed: ' . $e->getMessage(), 500);
+            return $this->responseJSON('PipelineError', 'Failed to fetch pipeline stages: ' . $e->getMessage(), 500);
         }
     }
 }
