@@ -22,10 +22,9 @@ class AuthControllerTest extends TestCase
         $this->user = User::factory()->create([
             'email' => 'testuser@example.com'
         ]);
+
         $this->token = JWTAuth::fromUser($this->user);
     }
-
-
 
     public function test_register_success()
     {
@@ -34,10 +33,42 @@ class AuthControllerTest extends TestCase
             'email' => 'john@example.com',
             'password' => 'password123',
             'type_id' => 1,
-            'company_id' => 1 
+            'company_id' => 1
         ];
 
         $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => 'success'
+            ])
+            ->assertJsonStructure([
+                'status',
+                'payload' => [
+                    'user' => [
+                        'id',
+                        'name',
+                        'email',
+                        'user_type' => [
+                            'id',
+                        ],
+                    ],
+                    'token'
+                ]
+            ]);
+    }
+
+    public function test_login_success()
+    {
+        User::factory()->create([
+            'email' => 'login@example.com',
+            'password' => Hash::make('password123')
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'login@example.com',
+            'password' => 'password123'
+        ]);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -52,22 +83,6 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
-    public function test_login_success()
-    {
-        $user = User::factory()->create([
-            'email' => 'login@example.com',
-            'password' => Hash::make('password123')
-        ]);
-
-        $response = $this->postJson('/api/login', [
-            'email' => 'login@example.com',
-            'password' => 'password123'
-        ]);
-
-        $response->assertStatus(201)
-            ->assertJson(['status' => 'success']);
-    }
-
     public function test_login_invalid_credentials_failure()
     {
         User::factory()->create([
@@ -77,21 +92,27 @@ class AuthControllerTest extends TestCase
 
         $response = $this->postJson('/api/login', [
             'email' => 'wrong@example.com',
-            'password' => 'incorrect'//
+            'password' => 'incorrect'
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors('email');
+            ->assertJsonStructure([
+                'status',
+                'payload' => [
+                    'email'
+                ]
+            ])
+            ->assertJsonPath('payload.email.0', 'The provided credentials are incorrect.');
     }
 
     public function test_display_error()
     {
-        $response = $this->getJson('/api/error'); 
+        $response = $this->getJson('/api/error');
 
         $response->assertStatus(401)
             ->assertJson([
                 'status' => 'failure',
-                'payload' => ['message' => 'Unauthorized']
+                'payload' => 'Unauthorized'
             ]);
     }
 }

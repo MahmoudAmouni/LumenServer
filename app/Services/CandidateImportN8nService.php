@@ -82,7 +82,7 @@ class CandidateImportN8nService
             }
 
             $item = [
-                'user_id' => (int) $recruiterId, // change it to recruiter
+                'recruiter_id' => (int) $recruiterId, // change it to recruiter
                 'full_name' => $fullName,
                 'email' => $email,
                 'phone_number' => $row['phone_number'] ?? null,
@@ -127,7 +127,7 @@ class CandidateImportN8nService
             $emails = array_values(array_unique(array_column($meta, 'email')));
 
             $query = Candidate::query()
-                ->where('user_id', $recruiterId)
+                ->where('recruiter_id', $recruiterId)
                 ->whereIn('email', $emails);
 
             if ($useTimestamps) {
