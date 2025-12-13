@@ -137,5 +137,56 @@ class OfferTest extends TestCase
         $this->assertEquals('not_offer_stage', $result1['status']);
         $this->assertEquals('no_candidates', $result2['status']);
     }
+
+    public function test_create_offer_success()
+    {
+        // Arrange
+        $company = CompanyName::factory()->create(['name' => 'Test Company']);
+        $job = Job::factory()->create([
+            'title' => 'Software Engineer',
+            'description' => 'Test job description',
+            'company_id' => $company->id
+        ]);
+        
+        $recruiter = User::factory()->create(['email' => 'recruiter@example.com']);
+        $candidate = Candidate::factory()->create([
+            'recruiter_id' => (string) $recruiter->id,
+            'full_name' => 'John Doe',
+            'email' => 'john@example.com'
+        ]);
+
+        $requestData = [
+            'candidate_id' => $candidate->id,
+            'job_id' => $job->id,
+            'salary' => 55000.00,
+            'start_date' => '2025-02-01',
+            'contract_type' => 'Full-time',
+            'offer_letter_template' => 'Welcome to our team!',
+            'status' => 'draft',
+            'recruiter_id' => $recruiter->id
+        ];
+
+        $response = $this->withHeaders($this->getAuthHeaders())
+            ->postJson('/api/v1/offers/add', $requestData);
+
+        $response->assertStatus(200)
+            ->assertJson(['status' => 'success'])
+            ->assertJson([
+                'payload' => [
+                    'candidate_id' => $candidate->id,
+                    'job_id' => $job->id,
+                    'salary' => '55000.00',
+                    'status' => 'draft',
+                    'contract_type' => 'Full-time'
+                ]
+            ]);
+
+        $this->assertDatabaseHas('offers', [
+            'candidate_id' => $candidate->id,
+            'job_id' => $job->id,
+            'salary' => 55000.00,
+            'status' => 'draft'
+        ]);
+    }
 }
 

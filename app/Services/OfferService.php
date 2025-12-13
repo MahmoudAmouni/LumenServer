@@ -7,18 +7,135 @@ use App\Models\CandidatePipelineStage;
 use App\Models\Stage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class OfferService
 {
-    /**
-     * Send offers to all candidates in the "offer" stage for a specific job
-     * 
-     * @param int $jobId The job ID
-     * @param int $pipelineStageId The pipeline stage ID
-     * @return array Results of sending offers to candidates
-     */
+    public function getAllOffers(?int $candidateId = null, ?int $jobId = null, ?string $status = null, ?int $recruiterId = null)
+    {
+        $query = Offer::with(['candidate', 'job', 'recruiter']);
+
+        if ($candidateId !== null) {
+            $query->where('candidate_id', $candidateId);
+        }
+
+        if ($jobId !== null) {
+            $query->where('job_id', $jobId);
+        }
+
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
+
+        if ($recruiterId !== null) {
+            $query->where('recruiter_id', $recruiterId);
+        }
+
+        return $query->get();
+    }
+
+    public function getOfferById(int $id)
+    {
+        $validator = Validator::make(['id' => $id], [
+            'id' => ['required', 'integer', 'exists:offers,id'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $offer = Offer::with(['candidate', 'job', 'recruiter'])->find($id);
+        
+        if (!$offer) {
+            throw new ModelNotFoundException("Offer not found", 404);
+        }
+        
+        return $offer;
+    }
+
+    public function createOrUpdateOffer(array $data, ?int $id = null)
+    {
+        $rules = [
+            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'salary' => ['nullable', 'numeric'],
+            'start_date' => ['nullable', 'date'],
+            'contract_type' => ['nullable', 'string'],
+            'offer_letter_template' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:draft,pending,accepted,rejected'],
+            'recruiter_id' => ['nullable', 'integer', 'exists:users,id'],
+        ];
+
+        if ($id !== null) {
+            $rules['id'] = ['required', 'integer', 'exists:offers,id'];
+        }
+
+        $validator = Validator::make(array_merge($data, ['id' => $id]), $rules);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $validated = $validator->validated();
+
+        if ($id === null) {
+            $offer = new Offer();
+        } else {
+            $offer = Offer::find($id);
+            if (!$offer) {
+                throw new ModelNotFoundException("Offer not found", 404);
+            }
+        }
+
+        $offer->candidate_id = $validated['candidate_id'];
+        $offer->job_id = $validated['job_id'];
+        $offer->salary = $validated['salary'] ?? $offer->salary;
+        $offer->start_date = $validated['start_date'] ?? $offer->start_date;
+        $offer->contract_type = $validated['contract_type'] ?? $offer->contract_type;
+        $offer->offer_letter_template = $validated['offer_letter_template'] ?? $offer->offer_letter_template;
+        $offer->status = $validated['status'] ?? $offer->status ?? 'draft';
+        $offer->recruiter_id = $validated['recruiter_id'] ?? $offer->recruiter_id;
+        $offer->save();
+
+        return $offer->load(['candidate', 'job', 'recruiter']);
+    }
+
+    public function deleteOffer(int $id)
+    {
+        $validator = Validator::make(['id' => $id], [
+            'id' => ['required', 'integer', 'exists:offers,id'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $offer = Offer::find($id);
+        
+        if (!$offer) {
+            throw new ModelNotFoundException("Offer not found", 404);
+        }
+        
+        $offer->delete();
+        
+        return true;
+    }
+
     public function sendOffersToCandidatesInOfferStage(int $jobId, int $pipelineStageId)
     {
+        $validator = Validator::make([
+            'job_id' => $jobId,
+            'pipeline_stage_id' => $pipelineStageId,
+        ], [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'pipeline_stage_id' => ['required', 'integer', 'exists:stages,id'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
         $candidatePipelineStages = CandidatePipelineStage::with([
             'candidate',
             'pipelineStage',
@@ -36,7 +153,6 @@ class OfferService
             ];
         }
 
-        // Check if the stage is "offer"
         $firstStage = $candidatePipelineStages->first()->pipelineStage;
         if (!$firstStage || strtolower($firstStage->name) !== 'offer') {
             return [
@@ -76,6 +192,14 @@ class OfferService
 
     public function triggerOfferStageWorkflow(int $candidatePipelineStageId)
     {
+        $validator = Validator::make(['candidate_pipeline_stage_id' => $candidatePipelineStageId], [
+            'candidate_pipeline_stage_id' => ['required', 'integer', 'exists:candidate_pipeline_stages,id'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
         $candidatePipelineStage = CandidatePipelineStage::with(['candidate', 'pipelineStage', 'job'])
             ->find($candidatePipelineStageId);
         
@@ -111,9 +235,18 @@ class OfferService
             'workflow_steps' => []
         ];
 
+        $workflowResults['workflow_steps']['offer_packet'] = $this->generateOfferPacketStep($offer);
+        $workflowResults['workflow_steps']['reminders'] = $this->scheduleRemindersStep($offer, $candidate, $recruiter);
+        $workflowResults['workflow_steps']['status_tracking'] = $this->trackOfferStatusChangeStep($offer);
+
+        return $workflowResults;
+    }
+
+    private function generateOfferPacketStep(Offer $offer)
+    {
         try {
             $offerPacket = $this->generateOfferPacket($offer);
-            $workflowResults['workflow_steps']['offer_packet'] = [
+            return [
                 'status' => 'success',
                 'message' => 'Offer packet generated successfully',
                 'file_path' => $offerPacket['file_path'] ?? null,
@@ -121,42 +254,46 @@ class OfferService
             ];
         } catch (\Exception $e) {
             Log::error('Failed to generate offer packet: ' . $e->getMessage());
-            $workflowResults['workflow_steps']['offer_packet'] = [
+            return [
                 'status' => 'failed',
                 'message' => 'Failed to generate offer packet: ' . $e->getMessage()
             ];
         }
+    }
 
+    private function scheduleRemindersStep(Offer $offer, $candidate, $recruiter)
+    {
         try {
             $reminders = $this->scheduleReminders($offer, $candidate, $recruiter);
-            $workflowResults['workflow_steps']['reminders'] = [
+            return [
                 'status' => 'success',
                 'message' => 'Reminders scheduled successfully',
                 'reminders' => $reminders
             ];
         } catch (\Exception $e) {
             Log::error('Failed to schedule reminders: ' . $e->getMessage());
-            $workflowResults['workflow_steps']['reminders'] = [
+            return [
                 'status' => 'failed',
                 'message' => 'Failed to schedule reminders: ' . $e->getMessage()
             ];
         }
+    }
 
+    private function trackOfferStatusChangeStep(Offer $offer)
+    {
         try {
             $this->trackOfferStatusChange($offer, 'moved_to_offer_stage');
-            $workflowResults['workflow_steps']['status_tracking'] = [
+            return [
                 'status' => 'success',
                 'message' => 'Offer status change tracked successfully'
             ];
         } catch (\Exception $e) {
             Log::error('Failed to track offer status: ' . $e->getMessage());
-            $workflowResults['workflow_steps']['status_tracking'] = [
+            return [
                 'status' => 'failed',
                 'message' => 'Failed to track offer status: ' . $e->getMessage()
             ];
         }
-
-        return $workflowResults;
     }
 
     private function generateOfferPacket(Offer $offer)
@@ -176,11 +313,8 @@ class OfferService
             'generated_at' => now()->toDateTimeString()
         ];
 
-   
-        
         $fileName = 'offer_packet_' . $offer->id . '_' . time() . '.pdf';
         $filePath = 'offers/' . $fileName;
-
 
         return [
             'file_path' => $filePath,
@@ -231,4 +365,3 @@ class OfferService
         return true;
     }
 }
-
