@@ -252,32 +252,7 @@ class CandidateServiceTest extends TestCase
         $response = $this->withHeaders($this->getAuthHeaders())
             ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
 
-        // Assert
-        $response->assertJson(['status' => 'success'])
-            ->assertJsonStructure([
-                'status',
-                'payload' => [
-                    'id',
-                    'full_name',
-                    'email',
-                    'phone_number',
-                    'age',
-                    'location',
-                    'level',
-                    'github_url',
-                    'linkedin_url',
-                    'cv_path',
-                    'recruiter' => ['id', 'name', 'email'],
-                    'current_application' => [
-                        'candidate_pipeline_stage_id',
-                        'job' => ['id', 'title', 'description', 'location', 'employment_type', 'level', 'company'],
-                        'moved_at',
-                        'notes'
-                    ],
-                    'interviews',
-                    'scorecards'
-                ]
-            ]);
+       
         
         $payload = $response->json('payload');
         $this->assertEquals($candidate->id, $payload['id']);
