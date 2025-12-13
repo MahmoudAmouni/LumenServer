@@ -14,7 +14,6 @@ class Interview extends Model
     protected $fillable = [
         'candidate_id',
         'interviewer_id',
-        'interview_type_id',
         'notes',
         'duration',
         'scheduled_at',
