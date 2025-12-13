@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Candidate;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -26,7 +25,49 @@ class CandidateImportN8nService
             ];
         }
 
-        // 1) Send Excel to n8n (Laravel does NOT parse Excel)
+        $n8n = $this->fetchRowsFromN8n($file, $recruiterId);
+
+        if (!$n8n['ok']) {
+            return $n8n['response'];
+        }
+
+        $rows = $n8n['rows'];
+
+        if (!is_array($rows) || count($rows) === 0) {
+            return [
+                'imported' => 0,
+                'rows' => [],
+                'errors' => ['No rows returned from n8n'],
+            ];
+        }
+
+        $batch = $this->buildBatch($rows, $recruiterId);
+
+        if (count($batch['insertRows']) === 0) {
+            return [
+                'imported' => 0,
+                'rows' => [],
+                'errors' => $batch['errors'],
+            ];
+        }
+
+        $out = $this->insertAndAttachCvs(
+            $batch['insertRows'],
+            $batch['meta'],
+            $recruiterId,
+            $batch['useTimestamps'],
+            $batch['batchTime']
+        );
+
+        return [
+            'imported' => count(array_filter($out, fn($r) => $r['status'] === 'ok')),
+            'rows' => $out,
+            'errors' => $batch['errors'],
+        ];
+    }
+
+    private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array
+    {
         $n8nUrl = config('services.n8n.excel_parse_webhook');
 
         $res = Http::timeout(180)
@@ -37,12 +78,15 @@ class CandidateImportN8nService
 
         if (!$res->successful()) {
             return [
-                'imported' => 0,
-                'rows' => [],
-                'errors' => [
-                    'n8n_failed' => [
-                        'status' => $res->status(),
-                        'body' => $res->body(),
+                'ok' => false,
+                'response' => [
+                    'imported' => 0,
+                    'rows' => [],
+                    'errors' => [
+                        'n8n_failed' => [
+                            'status' => $res->status(),
+                            'body' => $res->body(),
+                        ],
                     ],
                 ],
             ];
@@ -55,14 +99,14 @@ class CandidateImportN8nService
             $rows = [];
         }
 
-        if (!is_array($rows) || count($rows) === 0) {
-            return [
-                'imported' => 0,
-                'rows' => [],
-                'errors' => ['No rows returned from n8n'],
-            ];
-        }
+        return [
+            'ok' => true,
+            'rows' => $rows,
+        ];
+    }
 
+    private function buildBatch(array $rows, int $recruiterId): array
+    {
         $candidateModel = new Candidate();
         $useTimestamps = $candidateModel->usesTimestamps();
         $batchTime = now();
@@ -82,7 +126,7 @@ class CandidateImportN8nService
             }
 
             $item = [
-                'recruiter_id' => (int) $recruiterId, // change it to recruiter
+                'recruiter_id' => (int) $recruiterId,
                 'full_name' => $fullName,
                 'email' => $email,
                 'phone_number' => $row['phone_number'] ?? null,
@@ -108,22 +152,23 @@ class CandidateImportN8nService
             ];
         }
 
-        if (count($insertRows) === 0) {
-            return [
-                'imported' => 0,
-                'rows' => [],
-                'errors' => $errors,
-            ];
-        }
+        return [
+            'insertRows' => $insertRows,
+            'meta' => $meta,
+            'errors' => $errors,
+            'useTimestamps' => $useTimestamps,
+            'batchTime' => $batchTime,
+        ];
+    }
 
+    private function insertAndAttachCvs(array $insertRows, array $meta, int $recruiterId, bool $useTimestamps, $batchTime): array
+    {
         $out = [];
 
         DB::beginTransaction();
         try {
-            // 2) BULK INSERT
             Candidate::insert($insertRows);
 
-            // 3) Fetch inserted candidates IDs (batch-safe)
             $emails = array_values(array_unique(array_column($meta, 'email')));
 
             $query = Candidate::query()
@@ -141,7 +186,6 @@ class CandidateImportN8nService
                 $emailToId[$email] = $group->max('id');
             }
 
-            // 4) Download CVs + update cv_path
             foreach ($meta as $m) {
                 $email = $m['email'];
                 $candidateId = $emailToId[$email] ?? null;
@@ -194,10 +238,6 @@ class CandidateImportN8nService
             throw $e;
         }
 
-        return [
-            'imported' => count(array_filter($out, fn($r) => $r['status'] === 'ok')),
-            'rows' => $out,
-            'errors' => $errors,
-        ];
+        return $out;
     }
 }
