@@ -3,94 +3,85 @@
 namespace App\Services;
 
 use App\Models\Skill;
-//
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use App\Models\JobSkill;
 
 class SkillService
 {
-    public function getAllSkills()
-    {
-        return Skill::with('jobSkills.job')->get();
-    }
 
-    public function getSkillById(int $id)
+    private function validateSkillsInput(int $jobId, array $skills)
     {
-        $skill = Skill::with('jobSkills.job')->find($id);
-        if (!$skill) {
-            throw new \Exception("Skill not found");
+        $data = [
+            'job_id' => $jobId,
+            'skills' => $skills,
+        ];
+
+        $validator = Validator::make($data, [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'skills' => ['required', 'array'],
+            'skills.*.name' => ['required', 'string'],
+            'skills.*.type' => ['required', 'integer', 'in:1,2'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
         }
-        return $skill;
     }
 
-    public function createSkill(string $name): Skill
+    public function createSkills($jobId, $skills)
     {
-        $skill = new Skill();
-        $skill->name = $name;
-        $skill->save();
-        return $skill;
-    }
+        $this->validateSkillsInput($jobId, $skills);
 
-    public function createSkills(array $skills): array
-    {
-        $allSkillsData = [];
-
+        $skillNames = [];
+        $skillTypes = [];
         foreach ($skills as $skillData) {
-            $skillName = is_array($skillData) ? $skillData['name'] : $skillData;
-            $allSkillsData[$skillName] = [
-                'name' => $skillName,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            $name = $skillData['name'];
+            $skillNames[] = $name;
+            $skillTypes[$name] = $skillData['type'];
         }
 
-        $skillNames = array_keys($allSkillsData);
         $existingSkills = Skill::whereIn('name', $skillNames)
             ->get()
             ->keyBy('name');
 
         $newSkillsData = [];
-        $allSkillIds = [];
-
-        foreach ($allSkillsData as $name => $data) {
-            if (isset($existingSkills[$name])) {
-                $allSkillIds[$name] = $existingSkills[$name]->id;
-            } else {
-                $newSkillsData[] = $data;
+        foreach ($skillNames as $name) {
+            if (!isset($existingSkills[$name])) {
+                $newSkillsData[] = [
+                    'name' => $name,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
         }
 
         if (!empty($newSkillsData)) {
             Skill::insert($newSkillsData);
-
             $newSkills = Skill::whereIn('name', array_column($newSkillsData, 'name'))
                 ->get()
                 ->keyBy('name');
+            $existingSkills = $existingSkills->merge($newSkills);
+        }
 
-            foreach ($newSkills as $name => $skill) {
-                $allSkillIds[$name] = $skill->id;
+        JobSkill::where('job_id', $jobId)->delete();
+
+        if (!empty($skills)) {
+            $pivotData = [];
+            $now = now();
+            foreach ($skills as $skillData) {
+                $name = $skillData['name'];
+                $skillId = $existingSkills[$name]->id;
+                $pivotData[] = [
+                    'job_id' => $jobId,
+                    'skill_id' => $skillId,
+                    'Type' => $skillTypes[$name],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
+            JobSkill::insert($pivotData);
         }
-
-        return $allSkillIds;
     }
 
-    public function updateSkill(int $id, string $name): Skill
-    {
-        $skill = Skill::find($id);
-        if (!$skill) {
-            throw new \Exception("Skill not found");
-        }
-        $skill->name = $name;
-        $skill->save();
-        return $skill;
-    }
-
-    public function deleteSkill(int $id)
-    {
-        $skill = Skill::find($id);
-        if (!$skill) {
-            throw new \Exception("Skill not found");
-        }
-        $skill->delete();
-        return true;
-    }
 }

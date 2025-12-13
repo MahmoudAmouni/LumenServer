@@ -15,6 +15,11 @@ class JobService
     ) {
     }
 
+    public function getJobsByCompanyId(int $companyId)
+    {
+        return Job::where('company_id', $companyId)->get();
+    }
+
     public function createJob(array $data): Job
     {
         $validator = Validator::make($data, [
@@ -66,34 +71,6 @@ class JobService
         return $job->load(['recruiter', 'company', 'jobSkills.skill', 'pipelines.stages']);
     }
 
-    public function getAllJobs(?int $recruiterId = null, ?int $companyId = null, ?string $status = null)
-    {
-        $query = Job::with(['recruiter', 'company', 'jobSkills.skill', 'pipelines.stages']);
-
-        if ($recruiterId !== null) {
-            $query->where('recruiter_id', $recruiterId);
-        }
-
-        if ($companyId !== null) {
-            $query->where('company_id', $companyId);
-        }
-
-        if ($status !== null) {
-            $query->where('status', $status);
-        }
-
-        return $query->get();
-    }
-
-    public function getJobById(int $id)
-    {
-        $job = Job::with(['recruiter', 'company', 'jobSkills.skill', 'pipelines.stages'])->find($id);
-        if (!$job) {
-            throw new \Exception("Job not found");
-        }
-        return $job;
-    }
-
     public function updateJob(int $id, array $data): Job
     {
         $job = Job::find($id);
@@ -137,15 +114,5 @@ class JobService
         }
 
         return $job->load(['recruiter', 'company', 'jobSkills.skill', 'pipelines.stages']);
-    }
-
-    public function deleteJob(int $id)
-    {
-        $job = Job::find($id);
-        if (!$job) {
-            throw new \Exception("Job not found");
-        }
-        $job->delete();
-        return true;
     }
 }

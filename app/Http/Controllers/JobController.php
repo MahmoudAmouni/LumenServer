@@ -12,22 +12,11 @@ class JobController extends Controller
     {
     }
 
-    public function getAllJobs(Request $request)
+    public function getJobsByCompanyId(Request $request, int $companyId)
     {
         try {
-            $recruiterId = $request->query('recruiter_id') ? (int) $request->query('recruiter_id') : null;
-            $companyId = $request->query('company_id') ? (int) $request->query('company_id') : null;
-            $status = $request->query('status');
-            return $this->responseJSON($this->service->getAllJobs($recruiterId, $companyId, $status));
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
-        }
-    }
-
-    public function getJobById($id)
-    {
-        try {
-            return $this->responseJSON($this->service->getJobById((int) $id));
+            $jobs = $this->service->getJobsByCompanyId($companyId);
+            return $this->responseJSON($jobs);
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
@@ -54,16 +43,6 @@ class JobController extends Controller
             return $this->responseJSON($job);
         } catch (ValidationException $e) {
             return $this->responseJSON($e->errors(), "failure", 422);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
-        }
-    }
-
-    public function deleteJob($id)
-    {
-        try {
-            $this->service->deleteJob((int) $id);
-            return $this->responseJSON(null, "success", 204);
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }

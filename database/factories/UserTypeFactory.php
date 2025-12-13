@@ -5,6 +5,9 @@ namespace Database\Factories;
 use App\Models\UserType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserType>
+ */
 class UserTypeFactory extends Factory
 {
     protected $model = UserType::class;
@@ -12,11 +15,7 @@ class UserTypeFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->randomElement([
-                'admin',
-                'recruiter',//
-                'interviewr',
-            ]),
+            'name' => fake()->randomElement(['Admin', 'Recruiter', 'Manager', 'Interviewer', 'HR']),
         ];
     }
 }
