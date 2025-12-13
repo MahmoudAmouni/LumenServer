@@ -10,6 +10,7 @@ use App\Models\Candidate;
 use App\Models\Job;
 use App\Models\CompanyName;
 use App\Models\Scorecard;
+use App\Models\ScoreLabel;
 use App\Models\Stage;
 use App\Models\Interview;
 use App\Models\User;

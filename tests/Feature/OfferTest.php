@@ -9,6 +9,7 @@ use App\Models\CompanyName;
 use App\Models\User;
 use App\Models\CandidatePipelineStage;
 use App\Models\Stage;
+use App\Models\Offer;
 use App\Services\OfferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
