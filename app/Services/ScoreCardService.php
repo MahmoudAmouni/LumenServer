@@ -52,7 +52,7 @@ class ScorecardService
             'candidate_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:candidates,id'],
             'interview_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:interviews,id'],
             'job_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:jobs,id'],
-            'scorerate_id' => [$isUpdate ? 'sometimes' : 'required', 'integer'],
+            'score_rate' => [$isUpdate ? 'sometimes' : 'required', 'integer'],
             'status' => ['nullable', 'string', 'max:255'],
         ];
 
@@ -78,7 +78,7 @@ class ScorecardService
         $candidateId = $data['candidate_id'];
         $interviewId = $data['interview_id'];
         $jobId = $data['job_id'];
-        $scorerateId = $data['scorerate_id'];
+        $scorerateId = $data['score_rate'];
         $status = $data['status'] ?? 'pending';
 
         $allScoreLabelsData = [];
@@ -126,7 +126,7 @@ class ScorecardService
                 'interview_id' => $interviewId,
                 'job_id' => $jobId,
                 'scorelabel_id' => $labelId,
-                'scorerate_id' => $scorerateId,
+                'score_rate' => $scorerateId,
                 'status' => $status,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -155,7 +155,7 @@ class ScorecardService
             'interview_id' => ['sometimes', 'integer', 'exists:interviews,id'],
             'job_id' => ['sometimes', 'integer', 'exists:jobs,id'],
             'scorelabel_id' => ['sometimes', 'integer', 'exists:score_labels,id'],
-            'scorerate_id' => ['sometimes', 'integer'],
+            'score_rate' => ['sometimes', 'integer'],
             'status' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -167,7 +167,7 @@ class ScorecardService
         $scorecard->interview_id = $data['interview_id'] ?? $scorecard->interview_id;
         $scorecard->job_id = $data['job_id'] ?? $scorecard->job_id;
         $scorecard->scorelabel_id = $data['scorelabel_id'] ?? $scorecard->scorelabel_id;
-        $scorecard->scorerate_id = $data['scorerate_id'] ?? $scorecard->scorerate_id;
+        $scorecard->score_rate = $data['score_rate'] ?? $scorecard->score_rate;
         $scorecard->status = $data['status'] ?? $scorecard->status;
         $scorecard->save();
 

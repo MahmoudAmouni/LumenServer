@@ -13,7 +13,7 @@ class Scorecard extends Model
         'candidate_id',
         'interview_id',
         'status',
-        'scorerate_id',
+        'score_rate',
         'job_id',
         'scorelabel_id',
     ];
