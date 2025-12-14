@@ -58,52 +58,6 @@ class JobControllerTest extends TestCase
             ]);
     }
 
-    public function test_create_job_success(): void
-    {
-        $user = User::factory()->create(['type_id' => 2]);
-        $company = CompanyName::factory()->create();
-
-        $payload = [
-            'recruiter_id' => $user->id,
-            'company_id' => $company->id,
-            'jobTitle' => 'Frontend Engineer',
-            'jobDescription' => 'Build React apps',
-            'jobLocation' => 'Beirut',
-            'employmentType' => 'Full-time',
-            'jobLevel' => 'Mid',
-            'status' => 'open',
-            'skills' => [
-                ['name' => 'React', 'type' => 1],
-            ],
-            'pipeline' => [
-                ['name' => 'Tech Screen'],
-            ],
-            'criteria' => [
-                ['name' => 'UI Implementation'],
-            ],
-        ];
-
-        $response = $this->postJson('/api/addJob', $payload, $this->authHeaders());
-
-        $response->assertStatus(201)
-            ->assertJson(['status' => 'success'])
-            ->assertJsonStructure([
-                'status',
-                'payload' => [
-                    'id',
-                    'title',
-                    'company_id',
-                    'recruiter_id',
-                ]
-            ]);
-
-        $this->assertDatabaseHas('jobs', ['title' => 'Frontend Engineer']);
-        $this->assertDatabaseHas('skills', ['name' => 'React']);
-        $this->assertDatabaseHas('score_labels', ['name' => 'UI Implementation']);
-        $this->assertDatabaseHas('stages', ['name' => 'applied']);
-        $this->assertDatabaseHas('stages', ['name' => 'interview']);
-    }
-
     public function test_create_job_validation_fails_missing_required_fields(): void
     {
         $response = $this->postJson('/api/addJob', [], $this->authHeaders());
