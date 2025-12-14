@@ -16,7 +16,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('candidate_id');
                 $table->unsignedBigInteger('interview_id');
                 $table->string('status')->default('pending');
-                $table->unsignedBigInteger('scorerate_id');
+                $table->integer('score_rate');
                 $table->unsignedBigInteger('job_id');
                 $table->unsignedBigInteger('scorelabel_id');
                 $table->timestamps();

@@ -12,8 +12,7 @@ class ScoreLabel extends Model
     protected $table = 'score_labels';
     
     protected $fillable = [
-        'name',
-        'max_score',
+        'name'
     ];
     
     public function scorecards()
