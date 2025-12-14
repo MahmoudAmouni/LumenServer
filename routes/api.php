@@ -6,12 +6,14 @@ use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\InterviewN8nController;
 use Illuminate\Support\Facades\Route;
 
 
 
 
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
+Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
 Route::post('/login', [AuthController::class, "login"]);
@@ -46,7 +48,7 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::post('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
 
     // Job routes
-    Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
+
 
 
     Route::middleware(['admin'])->group(function () {

@@ -1,87 +1,36 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Skill;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use App\Models\JobSkill;
+use Illuminate\Support\Collection;
 
 class SkillService
 {
-
-    private function validateSkillsInput(int $jobId, array $skills)
+    public function getOrCreateSkills(array $skillNames)
     {
-        $data = [
-            'job_id' => $jobId,
-            'skills' => $skills,
-        ];
-
-        $validator = Validator::make($data, [
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'skills' => ['required', 'array'],
-            'skills.*.name' => ['required', 'string'],
-            'skills.*.type' => ['required', 'integer', 'in:1,2'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    public function createSkills($jobId, $skills)
-    {
-        $this->validateSkillsInput($jobId, $skills);
-
-        $skillNames = [];
-        $skillTypes = [];
-        foreach ($skills as $skillData) {
-            $name = $skillData['name'];
-            $skillNames[] = $name;
-            $skillTypes[$name] = $skillData['type'];
+        if (empty($skillNames)) {
+            return collect();
         }
 
-        $existingSkills = Skill::whereIn('name', $skillNames)
-            ->get()
-            ->keyBy('name');
+        $existing = Skill::whereIn('name', $skillNames)->get()->keyBy('name');
+        $missingNames = array_diff($skillNames, $existing->keys()->toArray());
 
-        $newSkillsData = [];
-        foreach ($skillNames as $name) {
-            if (!isset($existingSkills[$name])) {
-                $newSkillsData[] = [
-                    'name' => $name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-        }
-
-        if (!empty($newSkillsData)) {
-            Skill::insert($newSkillsData);
-            $newSkills = Skill::whereIn('name', array_column($newSkillsData, 'name'))
-                ->get()
-                ->keyBy('name');
-            $existingSkills = $existingSkills->merge($newSkills);
-        }
-
-        JobSkill::where('job_id', $jobId)->delete();
-
-        if (!empty($skills)) {
-            $pivotData = [];
+        if (!empty($missingNames)) {
             $now = now();
-            foreach ($skills as $skillData) {
-                $name = $skillData['name'];
-                $skillId = $existingSkills[$name]->id;
-                $pivotData[] = [
-                    'job_id' => $jobId,
-                    'skill_id' => $skillId,
-                    'Type' => $skillTypes[$name],
+            $insertData = [];
+            foreach ($missingNames as $name) {
+                $insertData[] = [
+                    'name' => $name,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
-            JobSkill::insert($pivotData);
-        }
-    }
+            Skill::insert($insertData);
 
+            $newSkills = Skill::whereIn('name', $missingNames)->get();
+            $existing = $existing->merge($newSkills->keyBy('name'));
+        }
+
+        return collect($existing->values());
+    }
 }
