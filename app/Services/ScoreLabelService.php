@@ -1,59 +1,45 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\ScoreLabel;
-//
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ScoreLabelService
 {
-    public function getAllScoreLabels()
+    public function createScoreLabels(array $scoreLabels): void
     {
-        return ScoreLabel::with('scorecards')->get();
-    }
-
-    public function getScoreLabelById(int $id)
-    {
-        $scoreLabel = ScoreLabel::with('scorecards')->find($id);
-        if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
+        if (empty($scoreLabels)) {
+            return;
         }
-        return $scoreLabel;
-    }
 
-    public function createScoreLabel(string $name, int $maxScore): ScoreLabel
-    {
-        $scoreLabel = new ScoreLabel();
-        $scoreLabel->name = $name;
-        $scoreLabel->max_score = $maxScore;
-        $scoreLabel->save();
-        return $scoreLabel;
-    }
+        $this->validateScoreLabels($scoreLabels);
 
-    public function createScoreLabels(array $scoreLabels)
-    {
-        $allScoreLabelsData = [];
-
-        foreach ($scoreLabels as $labelData) {
-            $labelName = $labelData['name'];
-            $allScoreLabelsData[$labelName] = [
-                'name' => $labelName,
-                'max_score' => $labelData['max_score'],
-                'created_at' => now(),
-                'updated_at' => now(),
+        $labelNames = [];
+        $labelDataByName = [];
+        foreach ($scoreLabels as $label) {
+            $name = $label['name'];
+            $labelNames[] = $name;
+            $labelDataByName[$name] = [
+                'name' => $name,
+                'max_score' => $label['max_score'],
             ];
         }
 
-        $labelNames = array_keys($allScoreLabelsData);
         $existingLabels = ScoreLabel::whereIn('name', $labelNames)
             ->get()
             ->keyBy('name');
 
         $newLabelsData = [];
-
-        foreach ($allScoreLabelsData as $name => $data) {
+        $now = now();
+        foreach ($labelNames as $name) {
             if (!isset($existingLabels[$name])) {
-                $newLabelsData[] = $data;
+                $newLabelsData[] = [
+                    'name' => $name,
+                    'max_score' => $labelDataByName[$name]['max_score'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
         }
 
@@ -62,25 +48,16 @@ class ScoreLabelService
         }
     }
 
-    public function updateScoreLabel(int $id, array $data): ScoreLabel
+    private function validateScoreLabels(array $scoreLabels): void
     {
-        $scoreLabel = ScoreLabel::find($id);
-        if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
-        }
-        $scoreLabel->name = $data['name'] ?? $scoreLabel->name;
-        $scoreLabel->max_score = $data['max_score'] ?? $scoreLabel->max_score;
-        $scoreLabel->save();
-        return $scoreLabel;
-    }
+        $validator = Validator::make(['score_labels' => $scoreLabels], [
+            'score_labels' => ['required', 'array'],
+            'score_labels.*.name' => ['required', 'string'],
+            'score_labels.*.max_score' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
 
-    public function deleteScoreLabel(int $id)
-    {
-        $scoreLabel = ScoreLabel::find($id);
-        if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
         }
-        $scoreLabel->delete();
-        return true;
     }
 }
