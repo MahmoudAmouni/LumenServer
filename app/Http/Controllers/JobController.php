@@ -19,7 +19,7 @@ class JobController extends Controller
             $jobs = $this->jobService->getJobsByCompanyId($request, $companyId);
             return $this->responseJSON($jobs, 'success', 200);
         } catch (ModelNotFoundException $e) {
-            return $this->responseJSON(null, 'Company or jobs not found', 404);
+            return $this->responseJSON('Company or jobs not found', 'failure', 404);
         } catch (\Exception $e) {
             return $this->responseJSON(null, 'Failed to fetch jobs: ' . $e->getMessage(), 500);
         }
@@ -45,7 +45,7 @@ class JobController extends Controller
             $job = $this->jobService->updateJob($id, $data);
             return $this->responseJSON($job, 'success', 200);
         } catch (ModelNotFoundException $e) {
-            return $this->responseJSON(null, 'Job not found', 404);
+            return $this->responseJSON('Job not found', 'failure', 404);
         } catch (ValidationException $e) {
             return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (\Exception $e) {
@@ -59,7 +59,7 @@ class JobController extends Controller
             $this->jobService->deleteJob($id);
             return $this->responseJSON(['message' => 'Job deleted successfully'], 'success', 200);
         } catch (ModelNotFoundException $e) {
-            return $this->responseJSON(null, 'Job not found', 404);
+            return $this->responseJSON('Job not found', 'failure', 404);
         } catch (\Exception $e) {
             return $this->responseJSON(null, 'Delete failed: ' . $e->getMessage(), 500);
         }

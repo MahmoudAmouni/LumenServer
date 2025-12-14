@@ -2,9 +2,11 @@
 namespace App\Services;
 
 use App\Models\Job;
+use App\Models\CompanyName;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class JobService
 {
@@ -16,6 +18,11 @@ class JobService
 
     public function getJobsByCompanyId(Request $request, int $companyId)
     {
+        $company = CompanyName::find($companyId);
+        if (!$company) {
+            throw new ModelNotFoundException("Company not found");
+        }
+
         $perPage = min((int) $request->query('per_page', 20), 100);
 
         return Job::query()
