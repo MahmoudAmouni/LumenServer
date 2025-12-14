@@ -6,12 +6,13 @@ use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\InterviewN8nController;
 use Illuminate\Support\Facades\Route;
 
 
 
-
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
+Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
 Route::post('/login', [AuthController::class, "login"]);
@@ -52,7 +53,11 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::put('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
     Route::get('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
     Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
-      // Offer Stage Workflow (triggered when candidate moves to "Offer" stage)
-    Route::post('/offer-stage-workflow/trigger', [OfferStageWorkflowController::class, 'trigger']);
     
+
+    Route::middleware(['admin'])->group(function () {
+    });
+
+    Route::middleware(['recruiter'])->group(function () {
+    });
 });
