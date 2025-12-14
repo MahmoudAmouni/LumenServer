@@ -59,14 +59,4 @@ class ScorecardController extends Controller
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
-
-    public function deleteScorecard($id)
-    {
-        try {
-            $this->service->deleteScorecard((int) $id);
-            return $this->responseJSON(null, "success", 204);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
-        }
-    }
 }
