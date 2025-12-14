@@ -16,44 +16,38 @@ class ScoreLabelService
         $this->validateScoreLabels($scoreLabels);
 
         $labelNames = [];
-        $labelDataByName = [];
         foreach ($scoreLabels as $label) {
-            $name = $label['name'];
-            $labelNames[] = $name;
-            $labelDataByName[$name] = [
-                'name' => $name,
-                'max_score' => $label['max_score'],
-            ];
+            $labelNames[] = $label['name'];
         }
 
-        $existingLabels = ScoreLabel::whereIn('name', $labelNames)
-            ->get()
-            ->keyBy('name');
+        $labelNames = array_unique($labelNames);
 
-        $newLabelsData = [];
-        $now = now();
-        foreach ($labelNames as $name) {
-            if (!isset($existingLabels[$name])) {
-                $newLabelsData[] = [
+        // find labels taht exist in the db
+        $existingLabels = ScoreLabel::whereIn('name', $labelNames)
+            ->pluck('name')
+            ->toArray();
+
+        // determine which labels are new
+        $newLabelNames = array_diff($labelNames, $existingLabels);
+
+        if (!empty($newLabelNames)) {
+            $now = now();
+            $insertData = [];
+            foreach ($newLabelNames as $name) {
+                $insertData[] = [
                     'name' => $name,
-                    'max_score' => $labelDataByName[$name]['max_score'],
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
-        }
-
-        if (!empty($newLabelsData)) {
-            ScoreLabel::insert($newLabelsData);
+            ScoreLabel::insert($insertData);
         }
     }
-
     private function validateScoreLabels(array $scoreLabels): void
     {
         $validator = Validator::make(['score_labels' => $scoreLabels], [
-            'score_labels' => ['required', 'array'],
-            'score_labels.*.name' => ['required', 'string'],
-            'score_labels.*.max_score' => ['required', 'integer', 'min:1', 'max:100'],
+            'score_labels' => ['required', 'array', 'min:1'],
+            'score_labels.*.name' => ['required', 'string', 'max:255'],
         ]);
 
         if ($validator->fails()) {
