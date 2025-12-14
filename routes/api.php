@@ -45,15 +45,19 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::put('/candidate-pipeline-stages/{id}', [CandidateController::class, 'createOrUpdateCandidatePipelineStage']);
     Route::get('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
     Route::post('/candidate-pipeline-stages/{id}/delete', [CandidateController::class, 'deleteCandidatePipelineStage']);
-
-    // Job routes
-
-
+    
+    // Offers CRUD routes
+    Route::get('/offers', [OfferController::class, 'getAllOffers']);
+    Route::get('/offers/{id}', [OfferController::class, 'getOfferById']);
+    Route::post('/offers/add', [OfferController::class, 'createOrUpdateOffer']);
+    Route::put('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
+    Route::get('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+    Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+    
 
     Route::middleware(['admin'])->group(function () {
     });
 
     Route::middleware(['recruiter'])->group(function () {
     });
-
 });
