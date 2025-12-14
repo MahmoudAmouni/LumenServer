@@ -21,11 +21,10 @@ class ScoreLabelService
         return $scoreLabel;
     }
 
-    public function createScoreLabel(string $name, int $maxScore): ScoreLabel
+    public function createScoreLabel(string $name): ScoreLabel
     {
         $scoreLabel = new ScoreLabel();
         $scoreLabel->name = $name;
-        $scoreLabel->max_score = $maxScore;
         $scoreLabel->save();
         return $scoreLabel;
     }
@@ -38,7 +37,6 @@ class ScoreLabelService
             $labelName = $labelData['name'];
             $allScoreLabelsData[$labelName] = [
                 'name' => $labelName,
-                'max_score' => $labelData['max_score'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -69,7 +67,6 @@ class ScoreLabelService
             throw new \Exception("Score Label not found");
         }
         $scoreLabel->name = $data['name'] ?? $scoreLabel->name;
-        $scoreLabel->max_score = $data['max_score'] ?? $scoreLabel->max_score;
         $scoreLabel->save();
         return $scoreLabel;
     }

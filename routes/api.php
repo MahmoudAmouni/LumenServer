@@ -7,6 +7,7 @@ use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\InterviewN8nController;
+use App\Http\Controllers\JobController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -18,6 +19,12 @@ Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJ
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
 Route::get('/error', [AuthController::class, "displayError"])->name("login");
+
+// Job routes
+Route::get('/companyJobs/{companyId}', [JobController::class, 'getJobsByCompanyId']);
+Route::post('/addJob', [JobController::class, 'createJob']);
+Route::post('/updateJob/{id}', [JobController::class, 'updateJob']);
+Route::post('/deleteJob/{id}', [JobController::class, 'deleteJob']);
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
 

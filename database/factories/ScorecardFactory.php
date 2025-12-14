@@ -22,7 +22,7 @@ class ScorecardFactory extends Factory
             'candidate_id' => Candidate::factory(),
             'job_id' => Job::factory(),
             'scorelabel_id' => ScoreLabel::factory(),
-            'scorerate_id' => fake()->numberBetween(1, 10),
+            'score_rate' => fake()->numberBetween(1, 10),
             'interview_id' => fake()->numberBetween(1, 100),
             'status' => fake()->randomElement(['completed', 'pending', 'in_progress']),
         ];
