@@ -10,18 +10,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-            Schema::create('jobs', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('recruiter_id');  
-                $table->unsignedBigInteger('company_id');
-                $table->string('title');
-                $table->text('description');
-                $table->string('location')->nullable();
-                $table->string('employment_type')->nullable();
-                $table->string('level')->nullable();
-                $table->string('status')->default('open');
-                $table->timestamps();
-     });
+        Schema::create('jobs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('recruiter_id');  
+            $table->unsignedBigInteger('company_id');
+            $table->string('title');
+            $table->text('description');
+            $table->string('location')->nullable();
+            $table->string('employment_type')->nullable();
+            $table->string('level')->nullable();
+            $table->string('status')->default('open');
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     /**
