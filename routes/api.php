@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Route;
 
 
 
-
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 
