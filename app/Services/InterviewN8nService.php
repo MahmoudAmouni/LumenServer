@@ -3,160 +3,149 @@
 namespace App\Services;
 
 use App\Models\Interview;
-use App\Models\PipelineStages;
+use App\Models\Candidate;
+use App\Models\CandidatePipelineStage;
+use App\Models\Job;
+use App\Models\Scorecard;
+use App\Services\ScorecardService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class InterviewN8nService
 {
-    public function __construct(){}
+    public function __construct(
+        private readonly ScorecardService $scorecardService
+    ) {}
 
-    public function sendPostInterviewWorkflow(int $interviewId, string $notes)
+    public function summarizeAndScoreInterview(int $interviewId, string $notes)
     {
-        // load interview with necessary relationships
         $interview = Interview::with([
             'candidate',
-            'scorecards.scorelabel',
-            'scorecards.job.pipelines.pipelineStages.stage',
-            'candidate.candidatePipelineStages' => function ($query) {
-                $query->with(['pipelineStage', 'job.pipelines.pipelineStages.stage'])
-                    ->latest('moved_at');
-            }
+            'candidate.candidateJobs.job',
+            'scorecards.scorelabel'
         ])->find($interviewId);
 
         if (!$interview) {
-            return [
-                'success' => false,
-                'error' => 'Interview not found',
-            ];
+            throw new \Exception("Interview not found");
         }
 
-        // get labels from scorecards
-        $labels = $interview->scorecards
-            ->map(function ($scorecard) {
-                return $scorecard->scorelabel ? $scorecard->scorelabel->name : null;
-            })
+        $candidate = $interview->candidate;
+        if (!$candidate) {
+            throw new \Exception("Candidate not found for this interview");
+        }
+
+        $job = $candidate->candidateJobs->first()?->job;
+        if (!$job) {
+            throw new \Exception("Job not found for candidate");
+        }
+
+        // get existing scorecard labels from scorecards created at interview time
+        $labelNames = Scorecard::where('interview_id', $interviewId)
+            ->with('scorelabel')
+            ->get()
+            ->pluck('scorelabel.name')
             ->filter()
             ->unique()
             ->values()
             ->toArray();
 
-        // get candidate email
-        $email = $interview->candidate->email ?? null;
-
-        if (!$email) {
-            return [
-                'success' => false,
-                'error' => 'Candidate email not found',
-            ];
+        if (empty($labelNames)) {
+            throw new \Exception("No scoring criteria found for this interview");
         }
 
-        // get next pipeline stage
-        $nextPipelineStage = $this->getNextPipelineStage($interview);
-
-        // prepare data payload
         $payload = [
             'notes' => $notes,
-            'labels' => $labels,
-            'email' => $email,
-            'next_stage' => $nextPipelineStage,
+            'labels' => $labelNames,
         ];
 
-        // send to n8n
         $n8nUrl = config('services.n8n.summarize_notes_webhook');
-
         if (!$n8nUrl) {
-            return [
-                'success' => false,
-                'error' => 'N8N webhook URL not configured',
-            ];
+            throw new \Exception("n8n summarize_notes_webhook URL not configured");
         }
 
-        $response = Http::timeout(180)
-            ->post($n8nUrl, $payload);
+        $response = Http::timeout(120)->post($n8nUrl, $payload);
 
         if (!$response->successful()) {
-            return [
-                'success' => false,
-                'error' => 'N8N request failed',
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ];
+            throw new \Exception("n8n AI scoring failed: " . $response->status() . " — " . $response->body());
+        }
+
+        $aiResult = $response->json();
+
+        $this->validateAiResponse($aiResult);
+
+        $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
+
+        return [
+            'summary' => $aiResult['summary'],
+            'scores' => $aiResult['scores'],
+            'interview_id' => $interviewId,
+            'candidate_id' => $candidate->id,
+            'job_id' => $job->id,
+        ];
+    }
+
+    public function sendNextStepEmail(int $candidatePipelineStageId)
+    {
+        // load stage + candidate + job
+        $stageRecord = CandidatePipelineStage::with([
+            'candidate',
+            'pipelineStage',
+            'job'
+        ])->findOrFail($candidatePipelineStageId);
+
+        $candidate = $stageRecord->candidate;
+        $stage = $stageRecord->pipelineStage;
+        $job = $stageRecord->job;
+
+        if (!$candidate || !$stage || !$job) {
+            throw new \Exception("Missing candidate, stage, or job data");
+        }
+
+        $stageName = strtolower($stage->name);
+        $emailType = in_array($stageName, ['rejected', 'declined']) ? 'rejected' : 'proceed';
+
+        $payload = [
+            'candidate_email' => $candidate->email,
+            'candidate_name' => $candidate->full_name,
+            'job_title' => $job->title,
+            'stage_name' => $stage->name,
+            'email_type' => $emailType,
+        ];
+
+        // call n8n email workflow
+        $n8nUrl = config('services.n8n.send_email_webhook');
+        if (!$n8nUrl) {
+            throw new \Exception("n8n send_email_webhook URL not configured");
+        }
+
+        $response = Http::timeout(30)->post($n8nUrl, $payload);
+
+        if (!$response->successful()) {
+            throw new \Exception("n8n email sending failed: " . $response->status() . " — " . $response->body());
         }
 
         return [
             'success' => true,
-            'data' => $response->json(),
+            'message' => 'Email sent successfully',
+            'to' => $candidate->email,
+            'stage' => $stage->name,
+            'type' => $emailType,
         ];
     }
 
-    private function getNextPipelineStage(Interview $interview)
+    private function validateAiResponse(array $data): void
     {
-        $candidate = $interview->candidate;
-        
-        if (!$candidate) {
-            return null;
+        $validator = Validator::make($data, [
+            'scores' => ['required', 'array', 'min:1'],
+            'scores.*.label_name' => ['required', 'string'],
+            'scores.*.score_rate' => ['required', 'integer', 'min:1', 'max:5'],
+            'summary' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
         }
-
-        // try to get job from scorecards first
-        $job = $interview->scorecards->first()?->job;
-        
-        // if no job from scorecards, get from candidate's most recent pipeline stage
-        if (!$job) {
-            $currentPipelineStage = $candidate->candidatePipelineStages
-                ->sortByDesc('moved_at')
-                ->first();
-            
-            $job = $currentPipelineStage?->job;
-        }
-
-        if (!$job) {
-            return null;
-        }
-
-        // get the most recent pipeline stage for this candidate and job
-        $currentPipelineStage = $candidate->candidatePipelineStages
-            ->where('job_id', $job->id)
-            ->sortByDesc('moved_at')
-            ->first();
-
-        if (!$currentPipelineStage) {
-            return null;
-        }
-
-        $currentStage = $currentPipelineStage->pipelineStage;
-
-        if (!$currentStage) {
-            return null;
-        }
-
-        $pipeline = $job->pipelines->first();
-
-        if (!$pipeline) {
-            return null;
-        }
-
-        // Get all pipeline stages ordered by 'order'
-        $pipelineStages = PipelineStages::where('pipeline_id', $pipeline->id)
-            ->with('stage')
-            ->orderBy('order')
-            ->get();
-
-        // Find current stage position
-        $currentPosition = null;
-        foreach ($pipelineStages as $index => $pipelineStage) {
-            if ($pipelineStage->stage_id === $currentStage->id) {
-                $currentPosition = $index;
-                break;
-            }
-        }
-
-        // Get next stage
-        if ($currentPosition !== null && isset($pipelineStages[$currentPosition + 1])) {
-            $nextPipelineStage = $pipelineStages[$currentPosition + 1];
-            return $nextPipelineStage->stage->name ?? null;
-        }
-
-        return null;
     }
 }
 
