@@ -6,10 +6,11 @@ use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\RagChatController;
 use Illuminate\Support\Facades\Route;
 
 
-
+Route::post('/rag/ask', [RagChatController::class, 'ask']);
 
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\IngestCvToRag;
 use App\Models\Candidate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -211,6 +212,14 @@ class CandidateImportN8nService
                             ? ['cv_path' => $cvPath, 'updated_at' => now()]
                             : ['cv_path' => $cvPath]
                         );
+
+                        IngestCvToRag::dispatchSync(
+                            candidateId: $candidateId,
+                            cvPath: $cvPath,
+                            sourceName: basename($cvPath),
+                            orgId: null
+                        );
+
                     } catch (\Throwable $e) {
                         $out[] = [
                             'status' => 'cv_failed',

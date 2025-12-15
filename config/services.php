@@ -16,6 +16,13 @@ return [
     'n8n' => [
         'excel_parse_webhook' => env('N8N_EXCEL_PARSE_WEBHOOK'),
     ],
+    'rag' => [
+        'url' => env('RAG_SERVICE_URL', 'http://127.0.0.1:9000'),
+    ],
+    'openai' => [
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
