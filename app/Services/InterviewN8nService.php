@@ -135,13 +135,13 @@ class InterviewN8nService
             return null;
         }
 
-        // Get all pipeline stages ordered by 'order'
+        // get all pipeline stages by order
         $pipelineStages = PipelineStages::where('pipeline_id', $pipeline->id)
             ->with('stage')
             ->orderBy('order')
             ->get();
 
-        // Find current stage position
+        // find current stage position
         $currentPosition = null;
         foreach ($pipelineStages as $index => $pipelineStage) {
             if ($pipelineStage->stage_id === $currentStage->id) {
@@ -150,7 +150,6 @@ class InterviewN8nService
             }
         }
 
-        // Get next stage
         if ($currentPosition !== null && isset($pipelineStages[$currentPosition + 1])) {
             $nextPipelineStage = $pipelineStages[$currentPosition + 1];
             return $nextPipelineStage->stage->name ?? null;

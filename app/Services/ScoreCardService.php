@@ -9,168 +9,103 @@ use Illuminate\Validation\ValidationException;
 
 class ScorecardService
 {
-    public function __construct(
-        private readonly ScoreLabelService $scoreLabelService
-    ) {
+
+    public function getScorecardsByInterviewId(int $interviewId)
+    {
+        return Scorecard::with('scorelabel')
+            ->where('interview_id', $interviewId)
+            ->get();
     }
 
-    public function getAllScorecards(?int $candidateId = null, ?int $interviewId = null, ?int $jobId = null, ?string $status = null)
+    public function createScorecardsForInterview(array $data)
     {
-        $query = Scorecard::with(['candidate', 'interview', 'scorelabel', 'job']);
+        $this->validateCreateData($data);
 
-        if ($candidateId !== null) {
-            $query->where('candidate_id', $candidateId);
-        }
-
-        if ($interviewId !== null) {
-            $query->where('interview_id', $interviewId);
-        }
-
-        if ($jobId !== null) {
-            $query->where('job_id', $jobId);
-        }
-
-        if ($status !== null) {
-            $query->where('status', $status);
-        }
-
-        return $query->get();
-    }
-
-    public function getScorecardById(int $id)
-    {
-        $scorecard = Scorecard::with(['candidate', 'interview', 'scorelabel', 'job'])->find($id);
-        if (!$scorecard) {
-            throw new \Exception("Scorecard not found");
-        }
-        return $scorecard;
-    }
-
-     private function validateScorecardData(array $data, bool $isUpdate = false): void
-    {
-        $rules = [
-            'candidate_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:candidates,id'],
-            'interview_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:interviews,id'],
-            'job_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:jobs,id'],
-            'scorerate_id' => [$isUpdate ? 'sometimes' : 'required', 'integer'],
-            'status' => ['nullable', 'string', 'max:255'],
-        ];
-
-        if (!$isUpdate) {
-            $rules['score_labels'] = ['required', 'array'];
-            $rules['score_labels.*.name'] = ['required', 'string'];
-        } else {
-            $rules['scorelabel_id'] = ['sometimes', 'integer', 'exists:score_labels,id'];
-        }
-
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    public function createScorecard(array $data)
-    {
-       $this->validateScorecardData($data, false);
-
-        $scoreLabels = $data['score_labels'];
         $candidateId = $data['candidate_id'];
-        $interviewId = $data['interview_id'];
         $jobId = $data['job_id'];
-        $scorerateId = $data['scorerate_id'];
-        $status = $data['status'] ?? 'pending';
+        $interviewId = $data['interview_id'];
+        $labelNames = $data['label_names'];
 
-        $allScoreLabelsData = [];
-        foreach ($scoreLabels as $labelData) {
-            $labelName = $labelData['name'];
-            $allScoreLabelsData[$labelName] = [
-                'name' => $labelName,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        $existingLabels = ScoreLabel::whereIn('name', $labelNames)->get()->keyBy('name');
+
+        if (count($existingLabels) !== count($labelNames)) {
+            $missing = array_diff($labelNames, $existingLabels->keys()->toArray());
+            throw new \Exception('Missing score labels: ' . implode(', ', $missing));
         }
 
-        // get existing labels by name
-        $labelNames = array_keys($allScoreLabelsData);
-        $existingLabels = ScoreLabel::whereIn('name', $labelNames)
-            ->get()
-            ->keyBy('name');
-
-        // create new labels if they don't exist
-        $newLabelsData = [];
-        foreach ($allScoreLabelsData as $name => $labelData) {
-            if (!isset($existingLabels[$name])) {
-                $newLabelsData[] = $labelData;
-            }
-        }
-
-        if (!empty($newLabelsData)) {
-            ScoreLabel::insert($newLabelsData);
-            // refresh existing labels to include newly created ones
-            $newLabels = ScoreLabel::whereIn('name', array_column($newLabelsData, 'name'))
-                ->get()
-                ->keyBy('name');
-            $existingLabels = $existingLabels->merge($newLabels);
-        }
-
-        // create scorecards for each label
-        $scorecardsData = [];
         $now = now();
-        foreach ($scoreLabels as $labelData) {
-            $labelName = $labelData['name'];
-            $labelId = $existingLabels[$labelName]->id;
-            
-            $scorecardsData[] = [
+        $scorecardData = [];
+        foreach ($labelNames as $name) {
+            $labelId = $existingLabels[$name]->id;
+            $scorecardData[] = [
                 'candidate_id' => $candidateId,
-                'interview_id' => $interviewId,
                 'job_id' => $jobId,
+                'interview_id' => $interviewId,
                 'scorelabel_id' => $labelId,
-                'scorerate_id' => $scorerateId,
-                'status' => $status,
+                'score_rate' => null,
+                'status' => 'pending',
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
 
-        Scorecard::insert($scorecardsData);
+        Scorecard::insert($scorecardData);
 
-        // return all created scorecards
-        return Scorecard::where('candidate_id', $candidateId)
+        return Scorecard::with('scorelabel')
             ->where('interview_id', $interviewId)
-            ->where('job_id', $jobId)
-            ->with(['candidate', 'interview', 'scorelabel', 'job'])
+            ->get();
+    }
+    public function updateScorecardsFromAI(int $interviewId, array $scores)
+    {
+        $this->validateAIScores($scores);
+
+        $existing = Scorecard::where('interview_id', $interviewId)
+            ->with('scorelabel')
+            ->get()
+            ->keyBy('scorelabel.name');
+
+        foreach ($scores as $item) {
+            $labelName = $item['label_name'];
+            $scoreRate = $item['score_rate'];
+
+            if ($existing->has($labelName)) {
+                $scorecard = $existing[$labelName];
+                $scorecard->score_rate = $scoreRate;
+                $scorecard->status = 'completed';
+                $scorecard->save();
+            }
+        }
+
+        return Scorecard::with('scorelabel')
+            ->where('interview_id', $interviewId)
             ->get();
     }
 
-    public function updateScorecard(int $id, array $data)
+    private function validateCreateData(array $data): void
     {
-        $scorecard = Scorecard::find($id);
-        if (!$scorecard) {
-            throw new \Exception("Scorecard not found");
-        }
-
         $validator = Validator::make($data, [
-            'candidate_id' => ['sometimes', 'integer', 'exists:candidates,id'],
-            'interview_id' => ['sometimes', 'integer', 'exists:interviews,id'],
-            'job_id' => ['sometimes', 'integer', 'exists:jobs,id'],
-            'scorelabel_id' => ['sometimes', 'integer', 'exists:score_labels,id'],
-            'scorerate_id' => ['sometimes', 'integer'],
-            'status' => ['nullable', 'string', 'max:255'],
+            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'interview_id' => ['required', 'integer', 'exists:interviews,id'],
+            'label_names' => ['required', 'array', 'min:1'],
+            'label_names.*' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
+    }
 
-        $scorecard->candidate_id = $data['candidate_id'] ?? $scorecard->candidate_id;
-        $scorecard->interview_id = $data['interview_id'] ?? $scorecard->interview_id;
-        $scorecard->job_id = $data['job_id'] ?? $scorecard->job_id;
-        $scorecard->scorelabel_id = $data['scorelabel_id'] ?? $scorecard->scorelabel_id;
-        $scorecard->scorerate_id = $data['scorerate_id'] ?? $scorecard->scorerate_id;
-        $scorecard->status = $data['status'] ?? $scorecard->status;
-        $scorecard->save();
+    private function validateAIScores(array $scores): void
+    {
+        $validator = Validator::make(['scores' => $scores], [
+            'scores' => ['required', 'array', 'min:1'],
+            'scores.*.label_name' => ['required', 'string'],
+            'scores.*.score_rate' => ['required', 'integer', 'min:1', 'max:5'],
+        ]);
 
-        return $scorecard->load(['candidate', 'interview', 'scorelabel', 'job']);
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
     }
 }
