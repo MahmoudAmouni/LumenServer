@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CandidatePipelineStage extends Model
 {
     use HasFactory;
+    
  protected $fillable = [
     'candidate_id',
     'pipeline_stage_id',
@@ -15,6 +16,10 @@ class CandidatePipelineStage extends Model
     'moved_at',
     'notes',
 ];
+    
+    protected $casts = [
+        'moved_at' => 'datetime',
+    ];
 
 public function candidate()
 {

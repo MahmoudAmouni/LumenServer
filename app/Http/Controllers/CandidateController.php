@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\CandidateService;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 
 class CandidateController extends Controller
 {
@@ -69,11 +70,14 @@ class CandidateController extends Controller
     public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null)
     {
         try {
-            // If pipelineStageId is not provided in route, check query parameter
+            // If pipelineStageId is not provided in route, check query parameters
             if ($pipelineStageId === null) {
-                $pipelineStageId = $request->query('pipeline_stage_id') ? (int) $request->query('pipeline_stage_id') : null;
-            } else {
-                $pipelineStageId = (int) $pipelineStageId;
+                // Check for stage_id (numeric) or stage_name (string)
+                $pipelineStageId = $request->query('pipeline_stage_id') 
+                    ? $request->query('pipeline_stage_id') 
+                    : ($request->query('stage_name') 
+                        ? $request->query('stage_name') 
+                        : null);
             }
             
             return $this->responseJSON($this->service->getCandidatesByJobIdAndPipelineStage((int) $jobId, $pipelineStageId));
@@ -124,6 +128,52 @@ class CandidateController extends Controller
         try {
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             return $this->responseJSON($this->service->getCandidateProfile((int) $candidateId, $jobId));
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 404);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+    public function createCandidate(Request $request)
+    {
+        try {
+            $data = $request->only([
+                'full_name',
+                'email',
+                'job_id',
+                'stage',
+                'recruiter_id',
+                'level',
+                'age',
+                'phone_number',
+                'location',
+                'github_url',
+                'linkedin_url',
+                'source',
+            ]);
+            
+            return $this->responseJSON($this->service->createCandidate($data), 'success', 201);
+        } catch (ValidationException $e) {
+            return $this->responseJSON($e->errors(), 'Validation failed', 422);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 404);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+    public function updateCandidateStage(Request $request, $candidateId)
+    {
+        try {
+            $jobId = $request->input('job_id');
+            $stage = $request->input('stage'); // Can be stage name or ID
+            
+            if (!$jobId || !$stage) {
+                return $this->responseJSON("job_id and stage are required", "failure", 400);
+            }
+            
+            return $this->responseJSON($this->service->updateCandidateStage((int) $candidateId, (int) $jobId, $stage));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
         } catch (\Exception $e) {
