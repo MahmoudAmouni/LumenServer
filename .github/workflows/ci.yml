@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer
+          extensions: mbstring, pdo_sqlite, sqlite3
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --optimize-autoloader
+
+      - name: Prepare app + DB
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+          mkdir -p database
+          touch database/database.sqlite
+
+          DB_PATH="${GITHUB_WORKSPACE}/database/database.sqlite"
+          grep -q '^DB_CONNECTION=' .env && sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env || echo 'DB_CONNECTION=sqlite' >> .env
+          grep -q '^DB_DATABASE=' .env && sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_PATH}|" .env || echo "DB_DATABASE=${DB_PATH}" >> .env
+
+          php artisan config:clear
+          php artisan migrate --force
+
+      - name: Run tests
+        run: php artisan test

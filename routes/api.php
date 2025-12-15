@@ -6,10 +6,14 @@ use App\Http\Controllers\CandidateImportN8nController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\RagChatController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InterviewN8nController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ScorecardController;
-use Illuminate\Support\Facades\Route;
+
+
+Route::post('/rag/ask', [RagChatController::class, 'ask']);
 
 
 
