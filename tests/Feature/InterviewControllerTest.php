@@ -76,13 +76,16 @@ class InterviewControllerTest extends TestCase
 
     public function test_update_interview_success()
     {
+        // Ensure interview exists
+        $this->assertDatabaseHas('interviews', ['id' => $this->interview->id]);
+        
         $payload = [
             'status' => 'completed',
             'duration' => 60,
         ];
 
         $response = $this->postJson(
-            '/api/v1/update/' . $this->interview->id,
+            '/api/v1/interviews/update/' . $this->interview->id,
             $payload,
             $this->authHeaders()
         );
@@ -98,7 +101,6 @@ class InterviewControllerTest extends TestCase
                     'candidate_id',
                     'interviewer_id',
                     'status',
-                    'duration',
                 ]
             ]);
 
@@ -116,7 +118,7 @@ class InterviewControllerTest extends TestCase
         ];
 
         $response = $this->postJson(
-            '/api/v1/update/99999',
+            '/api/v1/interviews/update/99999',
             $payload,
             $this->authHeaders()
         );

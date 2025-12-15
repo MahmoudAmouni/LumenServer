@@ -101,12 +101,23 @@ class CandidateServiceTest extends TestCase
                 'status',
                 'payload' => [
                     '*' => [
+                        'id',
+                        'name',
+                        'email',
+                        'stage',
+                        'jobId',
                         'candidate_pipeline_stage_id',
-                        'candidate' => ['id', 'name', 'email'],
-                        'pipeline_stage' => ['id', 'name'],
                         'scorecards',
-                        'moved_at',
-                        'notes'
+                        'internalNotes',
+                        'age',
+                        'location',
+                        'level',
+                        'linkedin',
+                        'github',
+                        'phone',
+                        'recruiter',
+                        'recruiterEmail',
+                        'appliedDate',
                     ]
                 ]
             ]);
@@ -116,20 +127,19 @@ class CandidateServiceTest extends TestCase
         
         $firstCandidate = $payload[0];
         $this->assertEquals($candidatePipelineStage2->id, $firstCandidate['candidate_pipeline_stage_id']);
-        $this->assertEquals($candidate2->id, $firstCandidate['candidate']['id']);
-        $this->assertEquals('Jane Smith', $firstCandidate['candidate']['name']);
-        $this->assertEquals('jane@example.com', $firstCandidate['candidate']['email']);
-        $this->assertEquals($stage->id, $firstCandidate['pipeline_stage']['id']);
-        $this->assertEquals('Applied', $firstCandidate['pipeline_stage']['name']);
-        $this->assertEquals('Second candidate notes', $firstCandidate['notes']);
+        $this->assertEquals($candidate2->id, $firstCandidate['id']);
+        $this->assertEquals('Jane Smith', $firstCandidate['name']);
+        $this->assertEquals('jane@example.com', $firstCandidate['email']);
+        $this->assertEquals('Applied', $firstCandidate['stage']);
+        $this->assertEquals('Second candidate notes', $firstCandidate['internalNotes']);
         $this->assertIsArray($firstCandidate['scorecards']);
         
         $secondCandidate = $payload[1];
         $this->assertEquals($candidatePipelineStage1->id, $secondCandidate['candidate_pipeline_stage_id']);
-        $this->assertEquals($candidate1->id, $secondCandidate['candidate']['id']);
-        $this->assertEquals('John Doe', $secondCandidate['candidate']['name']);
-        $this->assertEquals('john@example.com', $secondCandidate['candidate']['email']);
-        $this->assertEquals('First candidate notes', $secondCandidate['notes']);
+        $this->assertEquals($candidate1->id, $secondCandidate['id']);
+        $this->assertEquals('John Doe', $secondCandidate['name']);
+        $this->assertEquals('john@example.com', $secondCandidate['email']);
+        $this->assertEquals('First candidate notes', $secondCandidate['internalNotes']);
         $this->assertIsArray($secondCandidate['scorecards']);
     }
 
@@ -202,7 +212,7 @@ class CandidateServiceTest extends TestCase
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload);
-        $this->assertEquals($job1->id, $payload[0]['candidate_pipeline_stage_id']);
+        $this->assertEquals($job1->id, (int) $payload[0]['jobId']);
     }
 
    
@@ -250,9 +260,30 @@ class CandidateServiceTest extends TestCase
 
         // Act
         $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
+            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile?job_id=' . $job->id);
 
-       
+        // Assert
+        $response->assertStatus(200)
+            ->assertJson(['status' => 'success'])
+            ->assertJsonStructure([
+                'status',
+                'payload' => [
+                    'id',
+                    'name',
+                    'email',
+                    'level',
+                    'age',
+                    'location',
+                    'phone',
+                    'github',
+                    'linkedin',
+                ]
+            ]);
+        
+        $payload = $response->json('payload');
+        $this->assertEquals($candidate->id, (int) $payload['id']);
+        $this->assertEquals('Omar Khalil', $payload['name']);
+        $this->assertEquals('omar.khalil@example.com', $payload['email']);
     }
 
 

@@ -79,6 +79,7 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::get('/offers/{id}', [OfferController::class, 'getOfferById']);
     Route::post('/offers/add', [OfferController::class, 'createOrUpdateOffer']);
     Route::post('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
+    Route::post('/deleteJob/{id}', [JobController::class, 'deleteJob']);
     Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
     
 
