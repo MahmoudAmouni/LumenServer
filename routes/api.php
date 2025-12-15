@@ -8,12 +8,15 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\InterviewN8nController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\ScorecardController;
 use Illuminate\Support\Facades\Route;
 
 
 
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
-Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
+Route::post('/interviews/summarize-notes/{interviewId}', [InterviewN8nController::class, 'summarizeAndScore']);
+Route::post('/interviews/next-step-email/{candidatePipelineStageId}', [InterviewN8nController::class, 'sendNextStepEmail']);
+
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
 Route::post('/login', [AuthController::class, "login"]);
@@ -25,6 +28,11 @@ Route::get('/companyJobs/{companyId}', [JobController::class, 'getJobsByCompanyI
 Route::post('/addJob', [JobController::class, 'createJob']);
 Route::post('/updateJob/{id}', [JobController::class, 'updateJob']);
 Route::post('/deleteJob/{id}', [JobController::class, 'deleteJob']);
+
+// Scorcard routes
+
+Route::get('/scorecards/interview/{interviewId}', [ScorecardController::class, 'getScorecardsByInterviewId']);
+Route::post('/scorecards/create-for-interview', [ScorecardController::class, 'createScorecardsForInterview']);
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
 

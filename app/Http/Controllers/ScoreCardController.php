@@ -3,60 +3,50 @@
 namespace App\Http\Controllers;
 
 use App\Services\ScorecardService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ScorecardController extends Controller
 {
-    public function __construct(private ScorecardService $service)
-    {
-    }
+    public function __construct(
+        private readonly ScorecardService $scorecardService
+    ) {}
 
-    public function getAllScorecards(Request $request)
+    public function getScorecardsByInterviewId(int $interviewId): JsonResponse
     {
         try {
-            $candidateId = $request->query('candidate_id') ? (int) $request->query('candidate_id') : null;
-            $interviewId = $request->query('interview_id') ? (int) $request->query('interview_id') : null;
-            $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
-            $status = $request->query('status');
-            return $this->responseJSON($this->service->getAllScorecards($candidateId, $interviewId, $jobId, $status));
+            $scorecards = $this->scorecardService->getScorecardsByInterviewId($interviewId);
+            return $this->responseJSON($scorecards, 'success', 200);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON('Interview or scorecards not found', 'failure', 404);
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->responseJSON('Failed to fetch scorecards: ' . $e->getMessage(), 'failure', 500);
         }
     }
 
-    public function getScorecardById($id)
+    public function createScorecardsForInterview(Request $request): JsonResponse
     {
         try {
-            return $this->responseJSON($this->service->getScorecardById((int) $id));
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
-        }
-    }
-
-    public function createScorecard(Request $request)
-    {
-        try {
-            $data = $request->all();
-            $scorecard = $this->service->createScorecard($data);
-            return $this->responseJSON($scorecard, "success", 201);
+            $data = $this->validateCreateRequest($request);
+            $scorecards = $this->scorecardService->createScorecardsForInterview($data);
+            return $this->responseJSON($scorecards, 'success', 201);
         } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), "failure", 422);
+            return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->responseJSON('Scorecard creation failed: ' . $e->getMessage(), 'failure', 500);
         }
     }
 
-    public function updateScorecard(Request $request, $id)
+    private function validateCreateRequest(Request $request): array
     {
-        try {
-            $data = $request->all();
-            $scorecard = $this->service->updateScorecard((int) $id, $data);
-            return $this->responseJSON($scorecard);
-        } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), "failure", 422);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
-        }
+        return $request->validate([
+            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'interview_id' => ['required', 'integer', 'exists:interviews,id'],
+            'label_names' => ['required', 'array', 'min:1'],
+            'label_names.*' => ['required', 'string'],
+        ]);
     }
 }
