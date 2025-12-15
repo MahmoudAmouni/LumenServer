@@ -15,6 +15,9 @@ return [
     */
     'n8n' => [
         'excel_parse_webhook' => env('N8N_EXCEL_PARSE_WEBHOOK'),
+        'offer_packet_webhook' => env('N8N_OFFER_PACKET_WEBHOOK'),
+        'summarize_notes_webhook' => env('N8N_SUMMARIZE_NOTES_WEBHOOK'),
+        'send_email_webhook' => env('N8N_SEND_EMAIL_WEBHOOK'),
     ],
     'rag' => [
         'url' => env('RAG_SERVICE_URL', 'http://127.0.0.1:9000'),
@@ -43,6 +46,10 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+        'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
     ],
 
 ];

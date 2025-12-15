@@ -1,0 +1,57 @@
+<?php
+namespace App\Services;
+
+use App\Models\ScoreLabel;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+
+class ScoreLabelService
+{
+    public function createScoreLabels(array $scoreLabels): void
+    {
+        if (empty($scoreLabels)) {
+            return;
+        }
+
+        $this->validateScoreLabels($scoreLabels);
+
+        $labelNames = [];
+        foreach ($scoreLabels as $label) {
+            $labelNames[] = $label['name'];
+        }
+
+        $labelNames = array_unique($labelNames);
+
+        // find labels taht exist in the db
+        $existingLabels = ScoreLabel::whereIn('name', $labelNames)
+            ->pluck('name')
+            ->toArray();
+
+        // determine which labels are new
+        $newLabelNames = array_diff($labelNames, $existingLabels);
+
+        if (!empty($newLabelNames)) {
+            $now = now();
+            $insertData = [];
+            foreach ($newLabelNames as $name) {
+                $insertData[] = [
+                    'name' => $name,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            ScoreLabel::insert($insertData);
+        }
+    }
+    private function validateScoreLabels(array $scoreLabels): void
+    {
+        $validator = Validator::make(['score_labels' => $scoreLabels], [
+            'score_labels' => ['required', 'array', 'min:1'],
+            'score_labels.*.name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+    }
+}
