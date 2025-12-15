@@ -15,8 +15,7 @@ class ScoreLabelFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->randomElement(['Excellent', 'Good', 'Average', 'Poor', 'Needs Improvement']),
-            'max_score' => fake()->numberBetween(5, 10),
+            'name' => fake()->randomElement(['Excellent', 'Good', 'Average', 'Poor', 'Needs Improvement'])
         ];
     }
 }

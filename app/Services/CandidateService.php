@@ -55,9 +55,8 @@ class CandidateService
                 ],
                 'scorecards' => $scorecards->map(function ($scorecard) {
                     return [
-                        'scorerate_id' => $scorecard->scorerate_id,
-                        'scorelabel' => $scorecard->scorelabel->name ?? null,
-                        'max_score' => $scorecard->scorelabel->max_score ?? null,
+                        'score_rate' => $scorecard->score_rate,
+                        'scorelabel' => $scorecard->scorelabel->name ?? null
                     ];
                 })->toArray(),
                 'moved_at' => $item->moved_at,
@@ -129,7 +128,7 @@ class CandidateService
             'recruiter' => $candidate->recruiter ? ['id' => $candidate->recruiter->id, 'name' => $candidate->recruiter->name, 'email' => $candidate->recruiter->email] : null,
             'current_application' => $currentPipelineStage ? ['candidate_pipeline_stage_id' => $currentPipelineStage->id, 'job' => [...$job->only(['id', 'title', 'description', 'location', 'employment_type', 'level']), 'company' => $company ? $company->name : null], 'moved_at' => $currentPipelineStage->moved_at, 'notes' => $currentPipelineStage->notes] : null,
             'interviews' => $candidate->interviews->map(fn($interview) => [...$interview->only(['id', 'candidate_id', 'interviewer_id', 'interview_type_id', 'notes', 'duration', 'scheduled_at', 'status']), 'interviewer' => $interview->interviewer ? ['id' => $interview->interviewer->id, 'name' => $interview->interviewer->name, 'email' => $interview->interviewer->email] : null]),
-            'scorecards' => $candidate->scorecards->map(fn($scorecard) => [...$scorecard->only(['id', 'candidate_id', 'job_id', 'interview_id', 'scorerate_id', 'scorelabel_id', 'status']), 'scorelabel' => $scorecard->scorelabel ? ['id' => $scorecard->scorelabel->id, 'name' => $scorecard->scorelabel->name, 'max_score' => $scorecard->scorelabel->max_score] : null]),
+            'scorecards' => $candidate->scorecards->map(fn($scorecard) => [...$scorecard->only(['id', 'candidate_id', 'job_id', 'interview_id', 'score_rate', 'scorelabel_id', 'status']), 'scorelabel' => $scorecard->scorelabel ? ['id' => $scorecard->scorelabel->id, 'name' => $scorecard->scorelabel->name] : null]),
         ];
     }
 
