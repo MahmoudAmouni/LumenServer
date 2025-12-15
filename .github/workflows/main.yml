@@ -1,51 +1,92 @@
 name: CI/CD Laravel Server
 
 on:
-  push: 
+  push:
     branches: [main]
   pull_request:
     branches: [main]
 
-jobs: 
+permissions:
+  contents: read # recommended for checkout :contentReference[oaicite:0]{index=0}
+
+concurrency:
+  group: laravel-main
+  cancel-in-progress: true
+
+jobs:
   ci:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code 
-        uses: actions/checkout@v6.0.1
+      - name: Checkout code
+        uses: actions/checkout@v6.0.1 :contentReference[oaicite:1]{index=1}
 
       - name: Install PHP
-        uses: shivammathur/setup-php@2.36.0
-        with: 
+        uses: shivammathur/setup-php@2.36.0 :contentReference[oaicite:2]{index=2}
+        with:
           php-version: 8.4.1
+          coverage: none
 
-      - name: Install Composer
+      # Optional but recommended: cache composer downloads :contentReference[oaicite:3]{index=3}
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --optimize-autoloader
 
-      - name: Prepare Laravel 
+      - name: Prepare Laravel
         run: |
-            composer self-update 2.8.3
-            composer -v
-            cp .env.example .env
-            php artisan key:generate
-            php artisan config:cache
-            php artisan config:clear
-            composer dump-autoload --optimize
-        
+          cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan config:clear
+          php artisan config:cache
+
       - name: Run Tests
-        run: php artisan test 
+        run: php artisan test
 
-  cd: 
-     runs-on: ubuntu-latest
-     
-     needs: ci
-     
-     steps:
-      - name: Checkout code 
-        uses: actions/checkout@v6.0.1
-
-      - name: Connect to EC2 Server
-        uses: appleboy/ssh-action@v1.2.1
+  cd:
+    runs-on: ubuntu-latest
+    needs: ci
+    # deploy only on pushes to main (not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to EC2 (SSH)
+        uses: appleboy/ssh-action@v1.2.4 :contentReference[oaicite:4]{index=4}
         with:
           host: ${{ secrets.host_name }}
           username: ${{ secrets.username }}
           key: ${{ secrets.key }}
+          # port defaults to 22 :contentReference[oaicite:5]{index=5}
+          # fingerprint is optional but recommended to prevent MITM :contentReference[oaicite:6]{index=6}
+          # fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+
+          script: |
+            set -e
+
+            # IMPORTANT: set this secret to your app folder on the server, e.g. /var/www/myapp
+            cd "${{ secrets.APP_DIR }}"
+
+            echo "Pulling latest code..."
+            git fetch --all --prune
+            git reset --hard origin/main
+
+            echo "Installing PHP dependencies..."
+            composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
+
+            echo "Laravel optimize & migrate..."
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache || true
+            php artisan view:cache || true
+
+            echo "Restarting queues..."
+            php artisan queue:restart || true
+
+            echo "Done."
