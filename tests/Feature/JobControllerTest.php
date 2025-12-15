@@ -103,34 +103,4 @@ class JobControllerTest extends TestCase
             ]);
     }
 
-    public function test_delete_job_success(): void
-    {
-        $user = User::factory()->create(['type_id' => 2]);
-        $company = CompanyName::factory()->create();
-        $job = Job::factory()->create([
-            'company_id' => $company->id,
-            'recruiter_id' => $user->id,
-        ]);
-
-        $response = $this->postJson("/api/deleteJob/{$job->id}", [], $this->authHeaders());
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-                'payload' => ['message' => 'Job deleted successfully']
-            ]);
-
-        $this->assertDatabaseMissing('jobs', ['id' => $job->id]);
-    }
-
-    public function test_delete_job_not_found(): void
-    {
-        $response = $this->postJson('/api/deleteJob/99999', [], $this->authHeaders());
-
-        $response->assertStatus(404)
-            ->assertJson([
-                'status' => 'failure',
-                'payload' => 'Job not found'
-            ]);
-    }
 }

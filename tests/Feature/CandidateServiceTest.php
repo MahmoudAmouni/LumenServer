@@ -101,12 +101,23 @@ class CandidateServiceTest extends TestCase
                 'status',
                 'payload' => [
                     '*' => [
+                        'id',
+                        'name',
+                        'email',
+                        'stage',
+                        'jobId',
                         'candidate_pipeline_stage_id',
-                        'candidate' => ['id', 'name', 'email'],
-                        'pipeline_stage' => ['id', 'name'],
                         'scorecards',
-                        'moved_at',
-                        'notes'
+                        'internalNotes',
+                        'age',
+                        'location',
+                        'level',
+                        'linkedin',
+                        'github',
+                        'phone',
+                        'recruiter',
+                        'recruiterEmail',
+                        'appliedDate',
                     ]
                 ]
             ]);
@@ -116,20 +127,19 @@ class CandidateServiceTest extends TestCase
         
         $firstCandidate = $payload[0];
         $this->assertEquals($candidatePipelineStage2->id, $firstCandidate['candidate_pipeline_stage_id']);
-        $this->assertEquals($candidate2->id, $firstCandidate['candidate']['id']);
-        $this->assertEquals('Jane Smith', $firstCandidate['candidate']['name']);
-        $this->assertEquals('jane@example.com', $firstCandidate['candidate']['email']);
-        $this->assertEquals($stage->id, $firstCandidate['pipeline_stage']['id']);
-        $this->assertEquals('Applied', $firstCandidate['pipeline_stage']['name']);
-        $this->assertEquals('Second candidate notes', $firstCandidate['notes']);
+        $this->assertEquals($candidate2->id, $firstCandidate['id']);
+        $this->assertEquals('Jane Smith', $firstCandidate['name']);
+        $this->assertEquals('jane@example.com', $firstCandidate['email']);
+        $this->assertEquals('Applied', $firstCandidate['stage']);
+        $this->assertEquals('Second candidate notes', $firstCandidate['internalNotes']);
         $this->assertIsArray($firstCandidate['scorecards']);
         
         $secondCandidate = $payload[1];
         $this->assertEquals($candidatePipelineStage1->id, $secondCandidate['candidate_pipeline_stage_id']);
-        $this->assertEquals($candidate1->id, $secondCandidate['candidate']['id']);
-        $this->assertEquals('John Doe', $secondCandidate['candidate']['name']);
-        $this->assertEquals('john@example.com', $secondCandidate['candidate']['email']);
-        $this->assertEquals('First candidate notes', $secondCandidate['notes']);
+        $this->assertEquals($candidate1->id, $secondCandidate['id']);
+        $this->assertEquals('John Doe', $secondCandidate['name']);
+        $this->assertEquals('john@example.com', $secondCandidate['email']);
+        $this->assertEquals('First candidate notes', $secondCandidate['internalNotes']);
         $this->assertIsArray($secondCandidate['scorecards']);
     }
 
@@ -202,59 +212,8 @@ class CandidateServiceTest extends TestCase
         
         $payload = $response->json('payload');
         $this->assertCount(1, $payload);
-        $this->assertEquals($job1->id, $payload[0]['candidate_pipeline_stage_id']);
+        $this->assertEquals($job1->id, (int) $payload[0]['jobId']);
     }
-
-   
-
-    public function test_get_candidate_profile_success()
-    {
-        // Arrange
-        $company = CompanyName::factory()->create(['name' => 'Tech Company']);
-        $recruiter = User::factory()->create([
-            'name' => 'John Recruiter',
-            'email' => 'recruiter@example.com'
-        ]);
-        
-        $candidate = Candidate::factory()->create([
-            'recruiter_id' => $recruiter->id,
-            'full_name' => 'Omar Khalil',
-            'email' => 'omar.khalil@example.com',
-            'phone_number' => '+961 3 123 456',
-            'age' => 28,
-            'location' => 'Beirut, Lebanon',
-            'level' => 'Senior',
-            'github_url' => 'https://github.com/omarkhalil',
-            'linkedin_url' => 'https://linkedin.com/in/omarkhalil',
-            'cv_path' => '/storage/cvs/omar_khalil_cv.pdf'
-        ]);
-        
-        $job = Job::factory()->create([
-            'title' => 'Senior Full-Stack Engineer',
-            'description' => 'We are looking for...',
-            'location' => 'Beirut, Lebanon',
-            'employment_type' => 'Full-time',
-            'level' => 'Senior',
-            'company_id' => $company->id
-        ]);
-        
-        $stage = Stage::factory()->create(['name' => 'Applied']);
-        
-        $candidatePipelineStage = CandidatePipelineStage::factory()->create([
-            'candidate_id' => $candidate->id,
-            'pipeline_stage_id' => $stage->id,
-            'job_id' => $job->id,
-            'moved_at' => now(),
-            'notes' => 'Strong candidate with excellent skills'
-        ]);
-
-        // Act
-        $response = $this->withHeaders($this->getAuthHeaders())
-            ->getJson('/api/v1/candidates/' . $candidate->id . '/profile');
-
-       
-    }
-
 
 }
 

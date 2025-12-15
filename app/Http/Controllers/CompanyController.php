@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\CompanyService;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class CompanyController extends Controller
+{
+    public function __construct(private CompanyService $service)
+    {
+    }
+
+    public function createCompany(Request $request)
+    {
+        try {
+            $company = $this->service->createCompany($request->all());
+            return $this->responseJSON([
+                'id' => (string) $company->id,
+                'name' => $company->name,
+                'createdAt' => $company->created_at->toIso8601String(),
+            ], 'success', 201);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+    public function getAllCompanies()
+    {
+        try {
+            return $this->responseJSON($this->service->getAllCompanies());
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+
+}
+
