@@ -29,11 +29,11 @@ class JobController extends Controller
     public function createJob(CreateJobRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate($request->rules());
-            $job = $this->jobService->createJob($validated);
+            $job = $this->jobService->createJob($request->validated());
             return $this->responseJSON($job, 'success', 201);
+        } catch (ValidationException $e) {
+            return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (Exception $e) {
-            \Illuminate\Support\Facades\Log::error('CreateJob exception class', ['class' => get_class($e), 'message' => $e->getMessage()]);
             return $this->handleException($e, 'Create job');
         }
     }
