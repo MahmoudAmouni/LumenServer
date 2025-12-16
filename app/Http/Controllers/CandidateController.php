@@ -12,24 +12,23 @@ class CandidateController extends Controller
     public function __construct(private CandidateService $service){
     }
 
-    public function getAllPipelines(Request $request){
+    public function getAllPipelines(Request $request): \Illuminate\Http\JsonResponse
+    {
         try {
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             $companyId = $request->query('company_id') ? (int) $request->query('company_id') : null;
             return $this->responseJSON($this->service->getAllPipelines($jobId, $companyId));
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->handleException($e, 'Get pipelines');
         }
     }
 
-    public function getPipelineById($id)
+    public function getPipelineById(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            return $this->responseJSON($this->service->getPipelineById((int) $id));
-        } catch (ModelNotFoundException $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 404);
+            return $this->responseJSON($this->service->getPipelineById($id));
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->handleException($e, 'Get pipeline');
         }
     }
 
@@ -126,13 +125,13 @@ class CandidateController extends Controller
         }
     }
 
-    public function deleteCandidatePipelineStage($id)
+    public function deleteCandidatePipelineStage(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->service->deleteCandidatePipelineStage((int) $id);
+            $this->service->deleteCandidatePipelineStage($id);
             return $this->responseJSON(null, "success", 204);
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->handleException($e, 'Delete candidate pipeline stage');
         }
     }
 

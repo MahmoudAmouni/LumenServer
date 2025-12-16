@@ -30,7 +30,13 @@ Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
 Route::get('/error', [AuthController::class, "displayError"])->name("login");
 
-// Job routes
+// Job routes - RESTful (new)
+Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
+Route::post('/jobs', [JobController::class, 'createJob']);
+Route::put('/jobs/{id}', [JobController::class, 'updateJob']);
+Route::delete('/jobs/{id}', [JobController::class, 'deleteJob']);
+
+// Job routes - Legacy (backward compatibility)
 Route::get('/companyJobs/{companyId}', [JobController::class, 'getJobsByCompanyId']);
 Route::post('/addJob', [JobController::class, 'createJob']);
 Route::post('/updateJob/{id}', [JobController::class, 'updateJob']);

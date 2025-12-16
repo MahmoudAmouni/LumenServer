@@ -67,7 +67,12 @@ class CandidateService
     {
         $this->validateCandidateData($data, isUpdate: false);
 
-        $recruiterId = $data['recruiter_id'] ?? 1;
+        // Require recruiter_id - don't use magic number fallback
+        if (empty($data['recruiter_id'])) {
+            throw new \InvalidArgumentException('recruiter_id is required');
+        }
+
+        $recruiterId = (int) $data['recruiter_id'];
         $candidate = $this->getOrCreateCandidate($data, $recruiterId);
         $stage = $this->findStageForJob($data['job_id'], $data['stage'] ?? 'applied');
         $candidatePipelineStage = $this->createOrUpdatePipelineStage($candidate->id, $data['job_id'], $stage->id);

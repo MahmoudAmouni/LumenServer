@@ -58,15 +58,13 @@ class OfferController extends Controller
         }
     }
 
-    public function deleteOffer($id)
+    public function deleteOffer(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->service->deleteOffer((int) $id);
+            $this->service->deleteOffer($id);
             return $this->responseJSON(null, "success", 204);
-        } catch (ModelNotFoundException $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 404);
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->handleException($e, 'Delete offer');
         }
     }
 

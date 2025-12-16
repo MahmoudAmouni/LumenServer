@@ -28,11 +28,6 @@ class ScoreLabelService
     {
         $scoreLabel = new ScoreLabel();
         $scoreLabel->name = $name;
-        
-        if (property_exists($scoreLabel, 'max_score')) {
-            $scoreLabel->max_score = $scoreLabel->max_score ?? 5;
-        }
-        
         $scoreLabel->save();
         return $scoreLabel;
     }
@@ -82,14 +77,18 @@ class ScoreLabelService
         return collect($scoreLabels)
             ->mapWithKeys(function ($labelData) use ($now) {
                 $labelName = $labelData['name'];
-                return [
-                    $labelName => [
-                        'name'       => $labelName,
-                        'max_score'  => $labelData['max_score'] ?? 5,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ],
+                $data = [
+                    'name'       => $labelName,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
+                
+                // Only add max_score if the column exists in the database
+                if (isset($labelData['max_score'])) {
+                    $data['max_score'] = $labelData['max_score'];
+                }
+                
+                return [$labelName => $data];
             })
             ->all();
     }
