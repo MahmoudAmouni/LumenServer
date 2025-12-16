@@ -25,22 +25,22 @@ class InterviewN8nService
             'candidate.candidateJobs.job',
             'scorecards.scorelabel'
         ])->find($interviewId);
-
+        
         if (!$interview) {
             throw new \Exception("Interview not found");
         }
-
+    
         $candidate = $interview->candidate;
         if (!$candidate) {
             throw new \Exception("Candidate not found for this interview");
         }
-
+    
         $job = $candidate->candidateJobs->first()?->job;
         if (!$job) {
             throw new \Exception("Job not found for candidate");
         }
-
-        // get existing scorecard labels from scorecards created at interview time
+    
+        // Get existing scorecard labels from scorecards created at interview time
         $labelNames = Scorecard::where('interview_id', $interviewId)
             ->with('scorelabel')
             ->get()
@@ -49,33 +49,45 @@ class InterviewN8nService
             ->unique()
             ->values()
             ->toArray();
-
+    
         if (empty($labelNames)) {
             throw new \Exception("No scoring criteria found for this interview");
         }
-
+    
         $payload = [
             'notes' => $notes,
             'labels' => $labelNames,
         ];
-
+    
         $n8nUrl = config('services.n8n.summarize_notes_webhook');
         if (!$n8nUrl) {
             throw new \Exception("n8n summarize_notes_webhook URL not configured");
         }
-
+    
         $response = Http::timeout(120)->post($n8nUrl, $payload);
-
+    
         if (!$response->successful()) {
             throw new \Exception("n8n AI scoring failed: " . $response->status() . " — " . $response->body());
         }
-
+    
         $aiResult = $response->json();
-
+        
+        // Handle if n8n returns array wrapper: [{...}]
+        if (is_array($aiResult) && !isset($aiResult['summary']) && !isset($aiResult['scores'])) {
+            // If it's an array and doesn't have summary/scores at root level
+            if (count($aiResult) > 0 && is_array($aiResult[0])) {
+                $aiResult = $aiResult[0]; // Unwrap first element
+            }
+        }
+        
+        if (!is_array($aiResult)) {
+            throw new \Exception("n8n AI scoring failed: Invalid or non-JSON response from webhook. Response body: " . $response->body());
+        }
+    
         $this->validateAiResponse($aiResult);
-
+    
         $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
-
+    
         return [
             'summary' => $aiResult['summary'],
             'scores' => $aiResult['scores'],
@@ -148,15 +160,3 @@ class InterviewN8nService
         }
     }
 }
-
-
-/* 
-{
-    "notes": "some notes from interviewer",
-    "labels": ["label name 1", "label name 2", "label name 3"],
-    "email": "email of this candidate",
-    "next pipeline stage after interview": "stage name for this pipline" 
-}
-
-
-*/

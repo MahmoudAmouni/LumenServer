@@ -23,9 +23,11 @@ class JobService
             throw new ModelNotFoundException("Company not found");
         }
 
+        // for pagination
         $perPage = min((int) $request->query('per_page', 20), 100);
 
         return Job::query()
+            ->with(['pipelines.stages'])
             ->where('company_id', $companyId)
             ->orderBy('id')
             ->cursorPaginate($perPage);
@@ -35,16 +37,16 @@ class JobService
     {
         $this->validateJobData($data, isUpdate: false);
 
-        $job = Job::create([
-            'recruiter_id' => $data['recruiter_id'],
-            'company_id' => $data['company_id'],
-            'title' => $data['jobTitle'],
-            'description' => $data['jobDescription'],
-            'location' => $data['jobLocation'] ?? null,
-            'employment_type' => $data['employmentType'] ?? null,
-            'level' => $data['jobLevel'] ?? null,
-            'status' => $data['status'] ?? 'open',
-        ]);
+        $job = new Job();
+        $job->recruiter_id = $data['recruiter_id'];
+        $job->company_id = $data['company_id'];
+        $job->title = $data['jobTitle'];
+        $job->description = $data['jobDescription'];
+        $job->location = $data['jobLocation'] ?? null;
+        $job->employment_type = $data['employmentType'] ?? null;
+        $job->level = $data['jobLevel'] ?? null;
+        $job->status = $data['status'] ?? 'open';
+        $job->save();
 
         if (!empty($data['skills'])) {
             $this->jobSkillService->attachSkillsToJob($job->id, $data['skills']);
@@ -119,7 +121,7 @@ class JobService
                 'jobLocation' => ['nullable', 'string'],
                 'employmentType' => ['nullable', 'string'],
                 'jobLevel' => ['nullable', 'string'],
-                'status' => ['nullable', 'string', 'in:open,closed,draft,paused'],
+                'status' => ['nullable', 'string', 'in:open,closed'],
 
                 'skills' => ['nullable', 'array'],
                 'skills.*.name' => ['required', 'string'],
