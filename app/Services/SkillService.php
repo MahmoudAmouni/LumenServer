@@ -17,14 +17,15 @@ class SkillService
 
         if (!empty($missingNames)) {
             $now = now();
-            $insertData = [];
-            foreach ($missingNames as $name) {
-                $insertData[] = [
-                    'name' => $name,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
+            $insertData = collect($missingNames)
+                ->map(function ($name) use ($now) {
+                    return [
+                        'name'       => $name,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                })
+                ->all();
             Skill::insert($insertData);
 
             $newSkills = Skill::whereIn('name', $missingNames)->get();

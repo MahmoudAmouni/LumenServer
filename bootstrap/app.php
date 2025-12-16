@@ -16,8 +16,33 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'recruiter' => \App\Http\Middleware\RecruiterMiddleware::class,
         ]);
+        
+        // Enable CORS globally for ALL requests (including 404s)
+        $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
+        
+        // Also prepend for API and web routes
+        $middleware->api(prepend: [
+            \App\Http\Middleware\CorsMiddleware::class,
+        ]);
+        
+        $middleware->web(prepend: [
+            \App\Http\Middleware\CorsMiddleware::class,
+        ]);
     })
     
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Add CORS headers to ALL exception responses (404, 500, etc.)
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+            
+            $response = response()->json([
+                'status' => 'failure',
+                'payload' => $e->getMessage() ?: 'An error occurred'
+            ], $statusCode);
+            
+            return $response
+                ->header('Access-Control-Allow-Origin', '*')
+                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+        });
     })->create();

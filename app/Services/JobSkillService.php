@@ -20,53 +20,78 @@ class JobSkillService
             return;
         }
 
-        $skillNames = [];
-        $skillTypes = [];
-
-        foreach ($skills as $skill) {
-            $name = $skill['name'];
-            $skillNames[] = $name;
-            $skillTypes[$name] = $skill['type'];
-        }
+        $skillNames = $this->extractSkillNames($skills);
+        $skillTypes = $this->extractSkillTypes($skills);
 
         $this->skillService->getOrCreateSkills($skillNames);
+        $nameToId = $this->mapSkillNamesToIds($skillNames);
 
-        $nameToId = Skill::whereIn('name', $skillNames)->pluck('id', 'name');
-
-        JobSkill::where('job_id', $jobId)->delete();
-
-        $now = now();
-        $pivotData = [];
-        
-        foreach ($skills as $skill) {
-            $pivotData[] = [
-                'job_id' => $jobId,
-                'skill_id' => $nameToId[$skill['name']],
-                'type' => $skillTypes[$skill['name']],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-
-        JobSkill::insert($pivotData);
+        $this->replaceJobSkills($jobId, $skills, $skillTypes, $nameToId);
     }
 
     private function validateInput(int $jobId, array $skills): void
     {
-        if (!Job::where('id', $jobId)->exists()) {
-            throw new ValidationException(
-                Validator::make([], [])->errors()->add('job_id', 'Job not found.')
-            );
-        }
+        $data = [
+            'job_id' => $jobId,
+            'skills' => $skills,
+        ];
 
-        $validator = Validator::make(['skills' => $skills], [
-            'skills' => ['required', 'array', 'min:1'],
-            'skills.*.name' => ['required', 'string', 'max:255'],
-            'skills.*.type' => ['required', 'integer', 'in:1,2'],
-        ]);
+        $rules = $this->getCreateValidationRules();
+
+        $validator = Validator::make($data, $rules);
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
+    }
+
+    private function getCreateValidationRules(): array
+    {
+        return [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'skills' => ['required', 'array'],
+            'skills.*.name' => ['required', 'string'],
+            'skills.*.type' => ['required', 'integer', 'in:1,2'],
+        ];
+    }
+
+    private function extractSkillNames(array $skills): array
+    {
+        return collect($skills)
+            ->map(fn($skill) => $skill['name'])
+            ->values()
+            ->all();
+    }
+
+    private function extractSkillTypes(array $skills): array
+    {
+        return collect($skills)
+            ->mapWithKeys(fn($skill) => [$skill['name'] => $skill['type']])
+            ->all();
+    }
+
+    private function mapSkillNamesToIds(array $skillNames): array
+    {
+        return Skill::whereIn('name', $skillNames)->pluck('id', 'name')->toArray();
+    }
+
+    private function replaceJobSkills(int $jobId, array $skills, array $skillTypes, array $nameToId): void
+    {
+        JobSkill::where('job_id', $jobId)->delete();
+
+        $now = now();
+        $pivotData = collect($skills)
+            ->map(function ($skill) use ($jobId, $skillTypes, $nameToId, $now) {
+                return [
+                    'job_id'     => $jobId,
+                    'skill_id'   => $nameToId[$skill['name']],
+                    'type'       => $skillTypes[$skill['name']],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            })
+            ->all();
+
+        JobSkill::insert($pivotData);
     }
 }

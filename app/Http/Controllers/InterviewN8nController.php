@@ -9,32 +9,45 @@ use Illuminate\Validation\ValidationException;
 
 class InterviewN8nController extends Controller
 {
-    public function __construct(
-        private readonly InterviewN8nService $interviewN8nService
-    ) {}
+    public function __construct(private readonly InterviewN8nService $interviewN8nService) {}
 
-    public function summarizeAndScore(Request $request, int $interviewId)
+    public function sendPostInterviewWorkflow(Request $request, int $interviewId): JsonResponse
     {
         try {
-            $request->validate(['notes' => ['required', 'string']]);
-            $result = $this->interviewN8nService->summarizeAndScoreInterview($interviewId, $request->input('notes'));
-            return $this->responseJSON([
-                'summary' => $result['summary'],
-                'interview_id' => $result['interview_id']
-            ], 'success', 200);
+            $request->validate([
+                'notes' => ['required', 'string'],
+            ]);
 
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), 'failure', 400);
-        }
-    }
+            $result = $this->interviewN8nService->sendPostInterviewWorkflow(
+                $interviewId,
+                $request->input('notes')
+            );
 
-    public function sendNextStepEmail(Request $request, int $candidatePipelineStageId): JsonResponse
-    {
-        try {
-            $result = $this->interviewN8nService->sendNextStepEmail($candidatePipelineStageId);
-            return $this->responseJSON($result, 'success', 200);
+            if (!$result['success']) {
+                return $this->responseJSON(
+                    $result,
+                    'failure',
+                    400
+                );
+            }
+
+            return $this->responseJSON(
+                $result['data'],
+                'success',
+                200
+            );
+        } catch (ValidationException $e) {
+            return $this->responseJSON(
+                ['errors' => $e->errors()],
+                'failure',
+                422
+            );
         } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), 'failure', 400);
+            return $this->responseJSON(
+                ['error' => $e->getMessage()],
+                'failure',
+                500
+            );
         }
     }
 }

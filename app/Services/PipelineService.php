@@ -6,6 +6,7 @@ use App\Models\Pipeline;
 use App\Models\PipelineStages;
 use App\Models\Stage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PipelineService
@@ -70,16 +71,16 @@ class PipelineService
         $order++;
         $stagesWithOrder['interview'] = $order;
 
-        foreach ($Stages as $stageData) {
+        collect($Stages)->each(function ($stageData) use (&$order, &$allStagesData, &$stagesWithOrder, $now) {
             $order++;
-            $stageName = $stageData['name'];
+            $stageName = strtolower(trim($stageData['name']));
             $allStagesData[$stageName] = [
-                'name' => $stageName,
+                'name'       => $stageName,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
             $stagesWithOrder[$stageName] = $order;
-        }
+        });
 
         $allStagesData['offer'] = [
             'name' => 'offer',
@@ -106,9 +107,15 @@ class PipelineService
 
     private function getExistingStagesByName(array $stageNames)
     {
+        // Normalize stage names to lowercase for case-insensitive matching
+        $normalizedNames = array_map('strtolower', $stageNames);
+        
         return Stage::whereIn('name', $stageNames)
+            ->orWhereIn(DB::raw('LOWER(name)'), $normalizedNames)
             ->get()
-            ->keyBy('name');
+            ->keyBy(function ($stage) {
+                return strtolower($stage->name);
+            });
     }
 
     private function splitExistingAndNewStages(
@@ -118,14 +125,28 @@ class PipelineService
         array &$newStagesData,
         array &$stageIdsWithOrder
     ): void {
-        foreach ($allStagesData as $name => $data) {
-            if (isset($existingStages[$name])) {
-                $existingStage = $existingStages[$name];
-                $stageIdsWithOrder[$existingStage->id] = $stagesWithOrder[$name];
+        collect($allStagesData)->each(function ($data, $name) use (
+            $stagesWithOrder,
+            $existingStages,
+            &$newStagesData,
+            &$stageIdsWithOrder
+        ) {
+            $normalizedName = strtolower($name);
+
+            if (isset($existingStages[$normalizedName])) {
+                $existingStage = $existingStages[$normalizedName];
+
+                if (isset($stagesWithOrder[$normalizedName])) {
+                    $stageIdsWithOrder[$existingStage->id] = $stagesWithOrder[$normalizedName];
+                } elseif (isset($stagesWithOrder[$name])) {
+                    $stageIdsWithOrder[$existingStage->id] = $stagesWithOrder[$name];
+                } else {
+                    $stageIdsWithOrder[$existingStage->id] = count($stageIdsWithOrder) + 1;
+                }
             } else {
                 $newStagesData[] = $data;
             }
-        }
+        });
     }
 
     private function insertNewStagesAndFillOrders(
@@ -138,29 +159,39 @@ class PipelineService
 
             $newStages = Stage::whereIn('name', array_column($newStagesData, 'name'))
                 ->get()
-                ->keyBy('name');
+                ->keyBy(function ($stage) {
+                    return strtolower($stage->name);
+                });
 
-            foreach ($newStages as $name => $stage) {
-                $stageIdsWithOrder[$stage->id] = $stagesWithOrder[$name];
-            }
+            collect($newStagesData)->each(function ($data) use ($newStages, $stagesWithOrder, &$stageIdsWithOrder) {
+                $normalizedName = strtolower($data['name']);
+                $stage = $newStages[$normalizedName] ?? null;
+                if ($stage && isset($stagesWithOrder[$normalizedName])) {
+                    $stageIdsWithOrder[$stage->id] = $stagesWithOrder[$normalizedName];
+                } elseif ($stage && isset($stagesWithOrder[$data['name']])) {
+                    $stageIdsWithOrder[$stage->id] = $stagesWithOrder[$data['name']];
+                }
+            });
         }
     }
 
     private function insertPipelineStagesPivot(int $pipelineId, array $stageIdsWithOrder): void
     {
         if (!empty($stageIdsWithOrder)) {
-            $pivotData = [];
             $now = now();
 
-            foreach ($stageIdsWithOrder as $stageId => $stageOrder) {
-                $pivotData[] = [
-                    'pipeline_id' => $pipelineId,
-                    'stage_id' => $stageId,
-                    'order' => $stageOrder,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
+            $pivotData = collect($stageIdsWithOrder)
+                ->map(function ($stageOrder, $stageId) use ($pipelineId, $now) {
+                    return [
+                        'pipeline_id' => $pipelineId,
+                        'stage_id'    => $stageId,
+                        'order'       => $stageOrder,
+                        'created_at'  => $now,
+                        'updated_at'  => $now,
+                    ];
+                })
+                ->values()
+                ->all();
 
             PipelineStages::insert($pivotData);
         }
@@ -176,16 +207,23 @@ class PipelineService
             'stages' => $Stages,
         ];
 
-        $validator = Validator::make($data, [
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'job_title' => ['required', 'string'],
-            'stages' => ['required', 'array'],
-            'stages.*.name' => ['required', 'string'],
-        ]);
+        $rules = $this->getCreateValidationRules();
+
+        $validator = Validator::make($data, $rules);
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
+    }
+
+    private function getCreateValidationRules(): array
+    {
+        return [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'job_title' => ['required', 'string'],
+            'stages' => ['required', 'array'],
+            'stages.*.name' => ['required', 'string'],
+        ];
     }
 
 

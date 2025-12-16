@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\IngestCvToRag;
 use App\Models\Candidate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -116,27 +115,34 @@ class CandidateImportN8nService
         $meta = [];
         $errors = [];
 
-        foreach ($rows as $idx => $row) {
+        collect($rows)->each(function ($row, $idx) use (
+            $recruiterId,
+            $useTimestamps,
+            $batchTime,
+            &$insertRows,
+            &$meta,
+            &$errors
+        ) {
             $row = (array) $row;
             $fullName = $row['full_name'] ?? null;
             $email = isset($row['email']) ? strtolower(trim((string) $row['email'])) : null;
 
             if (!$fullName || !$email) {
                 $errors[] = "Row " . ($idx + 1) . ": missing full_name/email";
-                continue;
+                return;
             }
 
             $item = [
                 'recruiter_id' => (int) $recruiterId,
-                'full_name' => $fullName,
-                'email' => $email,
+                'full_name'    => $fullName,
+                'email'        => $email,
                 'phone_number' => $row['phone_number'] ?? null,
-                'level' => $row['level'] ?? null,
-                'github_url' => $row['github_url'] ?? null,
+                'level'        => $row['level'] ?? null,
+                'github_url'   => $row['github_url'] ?? null,
                 'linkedin_url' => $row['linkedin_url'] ?? null,
-                'cv_path' => null,
-                'age' => (isset($row['age']) && is_numeric($row['age'])) ? (int) $row['age'] : null,
-                'location' => $row['location'] ?? null,
+                'cv_path'      => null,
+                'age'          => (isset($row['age']) && is_numeric($row['age'])) ? (int) $row['age'] : null,
+                'location'     => $row['location'] ?? null,
             ];
 
             if ($useTimestamps) {
@@ -147,11 +153,11 @@ class CandidateImportN8nService
             $insertRows[] = $item;
 
             $meta[] = [
-                'row_number' => $idx + 1,
-                'email' => $email,
+                'row_number'   => $idx + 1,
+                'email'        => $email,
                 'cv_drive_url' => $row['cv_drive_url'] ?? null,
             ];
-        }
+        });
 
         return [
             'insertRows' => $insertRows,
@@ -182,23 +188,23 @@ class CandidateImportN8nService
 
             $inserted = $query->get(['id', 'email']);
 
-            $emailToId = [];
-            foreach ($inserted->groupBy('email') as $email => $group) {
-                $emailToId[$email] = $group->max('id');
-            }
+            $emailToId = $inserted
+                ->groupBy('email')
+                ->map(fn($group) => $group->max('id'))
+                ->all();
 
-            foreach ($meta as $m) {
+            collect($meta)->each(function ($m) use (&$out, $emailToId, $useTimestamps) {
                 $email = $m['email'];
                 $candidateId = $emailToId[$email] ?? null;
 
                 if (!$candidateId) {
                     $out[] = [
                         'status' => 'failed',
-                        'row' => $m['row_number'],
-                        'email' => $email,
-                        'error' => 'Candidate inserted but ID not found for batch',
+                        'row'    => $m['row_number'],
+                        'email'  => $email,
+                        'error'  => 'Candidate inserted but ID not found for batch',
                     ];
-                    continue;
+                    return;
                 }
 
                 $cvPath = null;
@@ -209,37 +215,29 @@ class CandidateImportN8nService
 
                         Candidate::whereKey($candidateId)->update(
                             $useTimestamps
-                            ? ['cv_path' => $cvPath, 'updated_at' => now()]
-                            : ['cv_path' => $cvPath]
+                                ? ['cv_path' => $cvPath, 'updated_at' => now()]
+                                : ['cv_path' => $cvPath]
                         );
-
-                        IngestCvToRag::dispatchSync(
-                            candidateId: $candidateId,
-                            cvPath: $cvPath,
-                            sourceName: basename($cvPath),
-                            orgId: null
-                        );
-
                     } catch (\Throwable $e) {
                         $out[] = [
-                            'status' => 'cv_failed',
-                            'row' => $m['row_number'],
+                            'status'       => 'cv_failed',
+                            'row'          => $m['row_number'],
                             'candidate_id' => $candidateId,
-                            'email' => $email,
-                            'error' => $e->getMessage(),
+                            'email'        => $email,
+                            'error'        => $e->getMessage(),
                         ];
-                        continue;
+                        return;
                     }
                 }
 
                 $out[] = [
-                    'status' => 'ok',
-                    'row' => $m['row_number'],
+                    'status'       => 'ok',
+                    'row'          => $m['row_number'],
                     'candidate_id' => $candidateId,
-                    'email' => $email,
-                    'cv_path' => $cvPath,
+                    'email'        => $email,
+                    'cv_path'      => $cvPath,
                 ];
-            }
+            });
 
             DB::commit();
         } catch (\Throwable $e) {

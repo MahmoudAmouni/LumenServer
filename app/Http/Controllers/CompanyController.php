@@ -35,6 +35,16 @@ class CompanyController extends Controller
         }
     }
 
-
+    public function deleteCompany($id)
+    {
+        try {
+            $this->service->deleteCompany((int) $id);
+            return $this->responseJSON(null, "success", 204);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 404);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
 }
 
