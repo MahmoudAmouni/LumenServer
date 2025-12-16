@@ -22,7 +22,7 @@ class InterviewN8nService
                     ->latest('moved_at');
             }
         ])->find($interviewId);
-
+        
         if (!$interview) {
             return [
                 'success' => false,
@@ -164,15 +164,3 @@ class InterviewN8nService
         return null;
     }
 }
-
-
-/* 
-{
-    "notes": "some notes from interviewer",
-    "labels": ["label name 1", "label name 2", "label name 3"],
-    "email": "email of this candidate",
-    "next pipeline stage after interview": "stage name for this pipline" 
-}
-
-
-*/
