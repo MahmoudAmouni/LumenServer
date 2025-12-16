@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Scorecard;
 use App\Models\ScoreLabel;
+use Exception;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -28,7 +29,7 @@ class ScorecardService
         $scorecard = Scorecard::with(['candidate', 'interview', 'scorelabel', 'job'])->find($id);
         
         if (!$scorecard) {
-            throw new \Exception("Scorecard not found");
+            throw new Exception("Scorecard not found");
         }
         
         return $scorecard;
@@ -56,7 +57,7 @@ class ScorecardService
         $scorecard = Scorecard::find($id);
         
         if (!$scorecard) {
-            throw new \Exception("Scorecard not found");
+            throw new Exception("Scorecard not found");
         }
 
         $this->validateScorecardData($data, isUpdate: true);

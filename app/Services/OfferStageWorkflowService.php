@@ -5,29 +5,24 @@ namespace App\Services;
 use App\Models\Offer;
 use App\Models\CandidatePipelineStage;
 use App\Models\Stage;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class OfferStageWorkflowService
 {
-    /**
-     * Check if candidate is in "offer" stage and trigger workflow automatically
-     * Call this after creating/updating a CandidatePipelineStage
-     */
     public function checkAndTriggerWorkflowIfOfferStage(int $candidateId, int $jobId, int $pipelineStageId): void
     {
         try {
-            // Check if the stage name is "offer"
-            $stage = \App\Models\Stage::find($pipelineStageId);
+            $stage = Stage::find($pipelineStageId);
             
             if (!$stage || strtolower($stage->name) !== 'offer') {
-                // Not in offer stage, do nothing
                 return;
             }
 
-            // Find the candidate pipeline stage record
             $candidatePipelineStage = CandidatePipelineStage::where('candidate_id', $candidateId)
                 ->where('job_id', $jobId)
                 ->where('pipeline_stage_id', $pipelineStageId)
@@ -35,7 +30,6 @@ class OfferStageWorkflowService
                 ->first();
 
             if ($candidatePipelineStage) {
-                // Trigger the workflow
                 $this->triggerWorkflow($candidatePipelineStage->id);
                 
                 Log::info('Offer stage workflow triggered automatically', [
@@ -45,8 +39,7 @@ class OfferStageWorkflowService
                     'candidate_pipeline_stage_id' => $candidatePipelineStage->id,
                 ]);
             }
-        } catch (\Exception $e) {
-            // Log error but don't break the main flow
+        } catch (Exception $e) {
             Log::error('Failed to check/trigger offer stage workflow automatically: ' . $e->getMessage(), [
                 'candidate_id' => $candidateId,
                 'job_id' => $jobId,
@@ -130,7 +123,7 @@ class OfferStageWorkflowService
             DB::commit();
 
             $workflowResults['success'] = true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
             Log::error('Offer stage workflow failed: ' . $e->getMessage());
             $workflowResults['success'] = false;
@@ -153,7 +146,6 @@ class OfferStageWorkflowService
             }
 
             $offerData = [
-                // Offer table fields
                 'offer_id' => $offer->id,
                 'candidate_id' => $offer->candidate_id,
                 'job_id' => $offer->job_id,
@@ -164,16 +156,13 @@ class OfferStageWorkflowService
                 'status' => $offer->status,
                 'recruiter_id' => $offer->recruiter_id,
                 
-                // Candidate information
                 'candidate_name' => $candidate->full_name,
                 'candidate_email' => $candidate->email,
                 'candidate_phone' => $candidate->phone_number,
                 
-                // Job information
                 'job_title' => $job->title ?? 'N/A',
                 'job_description' => $job->description ?? '',
                 
-                // Recruiter information
                 'recruiter_name' => $recruiter->name,
                 'recruiter_email' => $recruiter->email,
             ];
@@ -203,7 +192,7 @@ class OfferStageWorkflowService
                 'file_type' => $data['file_type'] ?? 'pdf',
                 'n8n_response' => $data,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to generate offer packet via n8n: ' . $e->getMessage());
             return [
                 'status' => 'failed',

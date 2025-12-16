@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\CompanyService;
-use Illuminate\Http\Request;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
@@ -21,7 +22,7 @@ class CompanyController extends Controller
                 'name' => $company->name,
                 'createdAt' => $company->created_at->toIso8601String(),
             ], 'success', 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -30,7 +31,7 @@ class CompanyController extends Controller
     {
         try {
             return $this->responseJSON($this->service->getAllCompanies());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -42,7 +43,7 @@ class CompanyController extends Controller
             return $this->responseJSON(null, "success", 204);
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }

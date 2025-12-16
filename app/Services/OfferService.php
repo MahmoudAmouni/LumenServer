@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Offer;
 use App\Models\CandidatePipelineStage;
 use App\Models\Stage;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -154,7 +155,7 @@ class OfferService
                         'status'                       => 'success',
                         'workflow_result'              => $workflowResult,
                     ];
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error(
                         'Failed to send offer to candidate ' .
                         $candidatePipelineStage->candidate_id .
@@ -190,7 +191,7 @@ class OfferService
 
         $stage = $candidatePipelineStage->pipelineStage;
         if (!$stage || strtolower($stage->name) !== 'offer') {
-            throw new \Exception("Candidate is not in the 'offer' stage");
+            throw new Exception("Candidate is not in the 'offer' stage");
         }
 
         $candidate = $candidatePipelineStage->candidate;
@@ -233,7 +234,7 @@ class OfferService
                 'file_path' => $offerPacket['file_path'] ?? null,
                 'file_type' => $offerPacket['file_type'] ?? 'pdf'
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to generate offer packet: ' . $e->getMessage());
             return [
                 'status' => 'failed',
@@ -251,7 +252,7 @@ class OfferService
                 'message' => 'Reminders scheduled successfully',
                 'reminders' => $reminders
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to schedule reminders: ' . $e->getMessage());
             return [
                 'status' => 'failed',
@@ -268,7 +269,7 @@ class OfferService
                 'status' => 'success',
                 'message' => 'Offer status change tracked successfully'
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to track offer status: ' . $e->getMessage());
             return [
                 'status' => 'failed',

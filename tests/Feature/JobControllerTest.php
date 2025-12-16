@@ -54,7 +54,7 @@ class JobControllerTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'status' => 'failure',
-                'payload' => 'Company or jobs not found'
+                'payload' => 'Resource not found'
             ]);
     }
 
@@ -99,7 +99,7 @@ class JobControllerTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'status' => 'failure',
-                'payload' => 'Job not found'
+                'payload' => 'Resource not found'
             ]);
     }
 

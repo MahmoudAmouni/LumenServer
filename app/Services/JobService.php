@@ -3,10 +3,9 @@ namespace App\Services;
 
 use App\Models\Job;
 use App\Models\CompanyName;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class JobService
 {
@@ -18,37 +17,43 @@ class JobService
 
     public function getJobsByCompanyId(Request $request, int $companyId)
     {
+        $company = CompanyName::find($companyId);
+        if (!$company) {
+            throw new ModelNotFoundException("Company not found");
+        }
+
         $perPage = min((int) $request->query('per_page', 20), 100);
 
-        return Job::query()
+        $jobs = Job::query()
             ->with(['pipelines.stages'])
             ->where('company_id', $companyId)
             ->orderBy('id')
             ->cursorPaginate($perPage);
+
+        return $jobs;
     }
 
     public function createJob(array $data)
     {
-        $this->validateJobData($data, isUpdate: false);
+        return DB::transaction(function () use ($data) {
+            $job = $this->createJobRecord($data);
 
-        $job = $this->createJobRecord($data);
+            $this->attachSkillsToJob($job->id, $data['skills'] ?? []);
+            $this->createPipelineForJob($job->id, $job->title, $data['pipeline'] ?? []);
+            $this->createScoreLabels($data['criteria'] ?? []);
 
-        $this->attachSkillsToJob($job->id, $data['skills'] ?? []);
-        $this->createPipelineForJob($job->id, $job->title, $data['pipeline'] ?? []);
-        $this->createScoreLabels($data['criteria'] ?? []);
-
-        return $job->load([
-            'recruiter',
-            'company',
-            'jobSkills.skill',
-            'pipelines.stages'
-        ]);
+            return $job->load([
+                'recruiter',
+                'company',
+                'jobSkills.skill',
+                'pipelines.stages'
+            ]);
+        });
     }
 
     public function updateJob(int $id, array $data)
     {
         $job = Job::findOrFail($id);
-        $this->validateJobData($data, isUpdate: true);
         $this->updateJobFields($job, $data);
 
         return $job->load([
@@ -128,54 +133,4 @@ class JobService
 
         $job->save();
     }
-
-    private function validateJobData(array $data, bool $isUpdate): void
-    {
-        $rules = $isUpdate 
-            ? $this->getUpdateValidationRules($data)
-            : $this->getCreateValidationRules();
-
-        $validator = Validator::make($data, $rules);
-        
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    private function getCreateValidationRules(): array
-    {
-        return [
-                'recruiter_id' => ['required', 'integer', 'exists:users,id'],
-                'company_id' => ['required', 'integer', 'exists:company_names,id'],
-                'jobTitle' => ['required', 'string'],
-                'jobDescription' => ['required', 'string'],
-                'jobLocation' => ['nullable', 'string'],
-                'employmentType' => ['nullable', 'string'],
-                'jobLevel' => ['nullable', 'string'],
-                'status' => ['nullable', 'string', 'in:open,closed,draft,paused'],
-                'skills' => ['nullable', 'array'],
-                'skills.*.name' => ['required', 'string'],
-                'skills.*.type' => ['required', 'integer', 'in:1,2'],
-                'pipeline' => ['nullable', 'array'],
-                'pipeline.*.name' => ['required', 'string'],
-                'criteria' => ['nullable', 'array'],
-                'criteria.*.name' => ['required', 'string'],
-            ];
-    }
-
-    private function getUpdateValidationRules(array $data): array
-    {
-            $baseRules = [
-                'recruiter_id' => ['integer', 'exists:users,id'],
-                'company_id' => ['integer', 'exists:company_names,id'],
-                'jobTitle' => ['string'],
-                'jobDescription' => ['string'],
-                'jobLocation' => ['nullable', 'string'],
-                'employmentType' => ['nullable', 'string'],
-                'jobLevel' => ['nullable', 'string'],
-                'status' => ['string', 'in:open,closed,draft,paused'],
-            ];
-
-        return array_intersect_key($baseRules, $data);
-        }
-    }
+}

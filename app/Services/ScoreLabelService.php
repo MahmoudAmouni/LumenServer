@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ScoreLabel;
+use Exception;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -18,7 +19,7 @@ class ScoreLabelService
         $scoreLabel = ScoreLabel::with('scorecards')->find($id);
 
         if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
+            throw new Exception("Score Label not found");
         }
 
         return $scoreLabel;
@@ -28,11 +29,6 @@ class ScoreLabelService
     {
         $scoreLabel = new ScoreLabel();
         $scoreLabel->name = $name;
-        
-        if (property_exists($scoreLabel, 'max_score')) {
-            $scoreLabel->max_score = $scoreLabel->max_score ?? 5;
-        }
-        
         $scoreLabel->save();
         return $scoreLabel;
     }
@@ -54,7 +50,7 @@ class ScoreLabelService
         $scoreLabel = ScoreLabel::find($id);
 
         if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
+            throw new Exception("Score Label not found");
         }
 
         $scoreLabel->name = $data['name'] ?? $scoreLabel->name;
@@ -68,7 +64,7 @@ class ScoreLabelService
         $scoreLabel = ScoreLabel::find($id);
 
         if (!$scoreLabel) {
-            throw new \Exception("Score Label not found");
+            throw new Exception("Score Label not found");
         }
 
         $scoreLabel->delete();
@@ -82,14 +78,17 @@ class ScoreLabelService
         return collect($scoreLabels)
             ->mapWithKeys(function ($labelData) use ($now) {
                 $labelName = $labelData['name'];
-                return [
-                    $labelName => [
-                        'name'       => $labelName,
-                        'max_score'  => $labelData['max_score'] ?? 5,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ],
+                $data = [
+                    'name'       => $labelName,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
+                
+                if (isset($labelData['max_score'])) {
+                    $data['max_score'] = $labelData['max_score'];
+                }
+                
+                return [$labelName => $data];
             })
             ->all();
     }

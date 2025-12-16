@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Handle OPTIONS preflight requests globally (for all routes, including non-API)
 Route::options('{any}', function () {
     return response('', 200)
         ->header('Access-Control-Allow-Origin', '*')

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\CandidateService;
-use Illuminate\Http\Request;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class CandidateController extends Controller
@@ -12,24 +14,23 @@ class CandidateController extends Controller
     public function __construct(private CandidateService $service){
     }
 
-    public function getAllPipelines(Request $request){
+    public function getAllPipelines(Request $request): JsonResponse
+    {
         try {
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             $companyId = $request->query('company_id') ? (int) $request->query('company_id') : null;
             return $this->responseJSON($this->service->getAllPipelines($jobId, $companyId));
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Get pipelines');
         }
     }
 
-    public function getPipelineById($id)
+    public function getPipelineById(int $id): JsonResponse
     {
         try {
-            return $this->responseJSON($this->service->getPipelineById((int) $id));
-        } catch (ModelNotFoundException $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->responseJSON($this->service->getPipelineById($id));
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Get pipeline');
         }
     }
 
@@ -39,7 +40,7 @@ class CandidateController extends Controller
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             $companyId = $request->query('company_id') ? (int) $request->query('company_id') : null;
             return $this->responseJSON($this->service->getPipelinesWithStages($jobId, $companyId));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -51,7 +52,7 @@ class CandidateController extends Controller
             return $this->responseJSON($this->service->getPipelineCandidates((int) $pipelineId, $jobId));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -63,16 +64,14 @@ class CandidateController extends Controller
             return $this->responseJSON($this->service->getPipelineCandidatesByStage((int) $pipelineId, (int) $stageId, $jobId));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
     public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null)
     {
         try {
-            // If pipelineStageId is not provided  . check query parameters
             if ($pipelineStageId === null) {
-                // Check for stage_id (numeric) or stage_name (string)
                 $pipelineStageId = $request->query('pipeline_stage_id') 
                     ? $request->query('pipeline_stage_id') 
                     : ($request->query('stage_name') 
@@ -80,7 +79,6 @@ class CandidateController extends Controller
                         : null);
             }
 
-            // Optional pagination
             $perPage = $request->query('per_page');
             $page = $request->query('page');
             $perPage = $perPage !== null ? max(1, min((int) $perPage, 100)) : null;
@@ -94,7 +92,7 @@ class CandidateController extends Controller
                     $page
                 )
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -104,7 +102,7 @@ class CandidateController extends Controller
         try {
             $id = $id ? (int) $id : null;
             return $this->responseJSON($this->service->getAllCandidatePipelineStages($id));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -121,18 +119,18 @@ class CandidateController extends Controller
                 'notes'
             ]);
             return $this->responseJSON($this->service->createOrUpdateCandidatePipelineStage($data, $itemId));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
 
-    public function deleteCandidatePipelineStage($id)
+    public function deleteCandidatePipelineStage(int $id): JsonResponse
     {
         try {
-            $this->service->deleteCandidatePipelineStage((int) $id);
+            $this->service->deleteCandidatePipelineStage($id);
             return $this->responseJSON(null, "success", 204);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Delete candidate pipeline stage');
         }
     }
 
@@ -143,7 +141,7 @@ class CandidateController extends Controller
             return $this->responseJSON($this->service->getCandidateProfile((int) $candidateId, $jobId));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -171,7 +169,7 @@ class CandidateController extends Controller
             return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -189,7 +187,7 @@ class CandidateController extends Controller
             return $this->responseJSON($this->service->updateCandidateStage((int) $candidateId, (int) $jobId, $stage));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }

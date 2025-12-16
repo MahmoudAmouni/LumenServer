@@ -24,7 +24,6 @@ class OfferStageWorkflowController extends Controller
             throw new ValidationException($validator);
         }
 
-        // Get recruiter ID from authenticated user
         $recruiterId = auth()->id();
 
         if (!$recruiterId) {
@@ -40,11 +39,9 @@ class OfferStageWorkflowController extends Controller
         $result = $this->service->triggerWorkflow($candidatePipelineStageId);
 
         if ($result['success']) {
-            // Extract file details from n8n response
             $offerPacketStep = $result['steps']['offer_packet'] ?? [];
             $n8nResponse = $offerPacketStep['n8n_response'] ?? [];
             
-            // Build response with email and file information
             $responseData = [
                 'success' => true,
                 'candidate_pipeline_stage_id' => $result['candidate_pipeline_stage_id'],

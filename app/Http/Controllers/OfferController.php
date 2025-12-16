@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\OfferService;
-use Illuminate\Http\Request;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class OfferController extends Controller
 {
@@ -20,7 +22,7 @@ class OfferController extends Controller
             $status = $request->query('status');
             $recruiterId = $request->query('recruiter_id') ? (int) $request->query('recruiter_id') : null;
             return $this->responseJSON($this->service->getAllOffers($candidateId, $jobId, $status, $recruiterId));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -31,7 +33,7 @@ class OfferController extends Controller
             return $this->responseJSON($this->service->getOfferById((int) $id));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -53,20 +55,18 @@ class OfferController extends Controller
             return $this->responseJSON($this->service->createOrUpdateOffer($data, $offerId));
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
 
-    public function deleteOffer($id)
+    public function deleteOffer(int $id): JsonResponse
     {
         try {
-            $this->service->deleteOffer((int) $id);
+            $this->service->deleteOffer($id);
             return $this->responseJSON(null, "success", 204);
-        } catch (ModelNotFoundException $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Delete offer');
         }
     }
 
@@ -77,7 +77,7 @@ class OfferController extends Controller
             return $this->responseJSON($result);
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }

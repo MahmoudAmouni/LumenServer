@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\InterviewN8nService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -23,31 +24,19 @@ class InterviewN8nController extends Controller
                 $request->input('notes')
             );
 
-            if (!$result['success']) {
-                return $this->responseJSON(
-                    $result,
-                    'failure',
-                    400
-                );
-            }
-
             return $this->responseJSON(
-                $result['data'],
+                $result,
                 'success',
                 200
             );
         } catch (ValidationException $e) {
             return $this->responseJSON(
-                ['errors' => $e->errors()],
-                'failure',
+                $e->errors(),
+                'Validation failed',
                 422
             );
-        } catch (\Exception $e) {
-            return $this->responseJSON(
-                ['error' => $e->getMessage()],
-                'failure',
-                500
-            );
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Send post interview workflow');
         }
     }
 }

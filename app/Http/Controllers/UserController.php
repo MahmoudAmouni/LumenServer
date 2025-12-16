@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\UserService;
-use Illuminate\Http\Request;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -24,7 +25,7 @@ class UserController extends Controller
                 'role' => $user->userType ? strtolower($user->userType->name) : null,
                 'createdAt' => $user->created_at->toIso8601String(),
             ], 'success', 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -33,7 +34,7 @@ class UserController extends Controller
     {
         try {
             return $this->responseJSON($this->service->getAllUsers());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -42,7 +43,7 @@ class UserController extends Controller
     {
         try {
             return $this->responseJSON($this->service->getUsersByCompany((int) $companyId));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -54,7 +55,7 @@ class UserController extends Controller
             return $this->responseJSON(null, "success", 204);
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
