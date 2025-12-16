@@ -6,6 +6,8 @@ use Illuminate\Http\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use RuntimeException;
 
 class DriveCvService
 {
@@ -13,7 +15,7 @@ class DriveCvService
     {
         $fileId = $this->extractDriveFileId($driveUrl);
         if (!$fileId) {
-            throw new \InvalidArgumentException("Invalid Google Drive URL");
+            throw new InvalidArgumentException("Invalid Google Drive URL");
         }
 
         $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
@@ -32,13 +34,13 @@ class DriveCvService
 
         if (!$res->successful()) {
             @unlink($tmpPath);
-            throw new \RuntimeException("Drive download failed: HTTP " . $res->status());
+            throw new RuntimeException("Drive download failed: HTTP " . $res->status());
         }
 
         $head = @file_get_contents($tmpPath, false, null, 0, 4);
         if ($head !== '%PDF') {
             @unlink($tmpPath);
-            throw new \RuntimeException("Not a PDF (Drive link private or blocked).");
+            throw new RuntimeException("Not a PDF (Drive link private or blocked).");
         }
 
         $storedPath = Storage::disk('public')->putFileAs('cvs', new File($tmpPath), $filename);

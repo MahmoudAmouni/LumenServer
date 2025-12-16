@@ -29,9 +29,6 @@ class InterviewController extends Controller
         }
     }
 
-    /**
-     * Update interview notes by candidate_id and job_id
-     */
     public function updateInterviewNotes(Request $request): JsonResponse
     {
         try {

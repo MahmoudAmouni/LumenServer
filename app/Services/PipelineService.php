@@ -32,7 +32,6 @@ class PipelineService
         $newStagesData = [];
         $stageIdsWithOrder = [];
 
-        //check if name of stage is there get id if not set it in the array and insert them all together
         $this->splitExistingAndNewStages(
             $allStagesData,
             $stagesWithOrder,
@@ -66,7 +65,6 @@ class PipelineService
             'updated_at' => $now,
         ];
 
-        //first stage applied of order 1 set all the stages in array to do insert down
         $stagesWithOrder['applied'] = $order;
         $order++;
         $stagesWithOrder['interview'] = $order;
@@ -107,7 +105,6 @@ class PipelineService
 
     private function getExistingStagesByName(array $stageNames)
     {
-        // Normalize stage names to lowercase for case-insensitive matching
         $normalizedNames = array_map('strtolower', $stageNames);
         
         return Stage::whereIn('name', $stageNames)

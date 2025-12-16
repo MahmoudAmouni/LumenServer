@@ -86,7 +86,6 @@ class UserService
 
     private function mapRoleToTypeId(string $role): int
     {
-        // 1 = Admin, 2 = Recruiter, 3 = Interviewer
         return $role === 'recruiter' ? 2 : 3;
     }
 

@@ -30,10 +30,8 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         try {
-            // Get all request data (works for both JSON and form-encoded)
             $data = $request->all();
             
-            // If no data found, try parsing raw JSON body
             if (empty($data) && $request->getContent()) {
                 $jsonData = json_decode($request->getContent(), true);
                 if ($jsonData) {

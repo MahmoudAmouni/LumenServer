@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Skill;
 use App\Models\Stage;
+use Exception;
 use Illuminate\Http\JsonResponse;
 
 class SkillController extends Controller
 {
-    /**
-     * Get all available skills
-     */
     public function getAllSkills(): JsonResponse
     {
         try {
@@ -22,14 +20,11 @@ class SkillController extends Controller
                 ];
             });
             return $this->responseJSON($formatted->toArray(), 'success', 200);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), 'failure', 400);
         }
     }
 
-    /**
-     * Get all available stages (for pipeline templates)
-     */
     public function getAllStages(): JsonResponse
     {
         try {
@@ -41,7 +36,7 @@ class SkillController extends Controller
                 ];
             });
             return $this->responseJSON($formatted->toArray(), 'success', 200);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), 'failure', 400);
         }
     }

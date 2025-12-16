@@ -7,9 +7,13 @@ use App\Models\Candidate;
 use App\Models\CandidateJob;
 use App\Models\Stage;
 use App\Models\Job;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class CandidateService
 {
@@ -67,9 +71,8 @@ class CandidateService
     {
         $this->validateCandidateData($data, isUpdate: false);
 
-        // Require recruiter_id - don't use magic number fallback
         if (empty($data['recruiter_id'])) {
-            throw new \InvalidArgumentException('recruiter_id is required');
+            throw new InvalidArgumentException('recruiter_id is required');
         }
 
         $recruiterId = (int) $data['recruiter_id'];
@@ -142,18 +145,18 @@ class CandidateService
             return;
         }
 
-            if (is_numeric($pipelineStageIdOrName)) {
-                $query->where('pipeline_stage_id', (int) $pipelineStageIdOrName);
+        if (is_numeric($pipelineStageIdOrName)) {
+            $query->where('pipeline_stage_id', (int) $pipelineStageIdOrName);
             return;
         }
 
-                $normalizedStageName = strtolower(trim($pipelineStageIdOrName));
-                $stage = Stage::whereRaw('LOWER(TRIM(name)) = ?', [$normalizedStageName])->first();
-                
-                if ($stage) {
-                    $query->where('pipeline_stage_id', $stage->id);
-                } else {
-                    \Log::warning("Stage not found: {$pipelineStageIdOrName}, normalized: {$normalizedStageName}");
+        $normalizedStageName = strtolower(trim($pipelineStageIdOrName));
+        $stage = Stage::whereRaw('LOWER(TRIM(name)) = ?', [$normalizedStageName])->first();
+        
+        if ($stage) {
+            $query->where('pipeline_stage_id', $stage->id);
+        } else {
+            Log::warning("Stage not found: {$pipelineStageIdOrName}, normalized: {$normalizedStageName}");
         }
     }
 
@@ -406,7 +409,6 @@ class CandidateService
 
     private function getCandidateRules(bool $isCreate, array $data): array
     {
-        // base rules (all fields optional here)
         $baseRules = [
             'full_name' => ['string', 'max:255'],
             'email' => ['email', 'max:255'],
@@ -423,7 +425,6 @@ class CandidateService
         ];
 
         if ($isCreate) {
-            // For create, mark core fields as required
             $baseRules['full_name'][] = 'required';
             $baseRules['email'][] = 'required';
             $baseRules['job_id'][] = 'required';
@@ -431,7 +432,6 @@ class CandidateService
             return $baseRules;
         }
 
-        // For update, only validate fields that are actually present
         return array_intersect_key($baseRules, $data);
     }
 
@@ -622,8 +622,8 @@ class CandidateService
         }
         if (is_string($date)) {
             try {
-                return (new \Carbon\Carbon($date))->toIso8601String();
-            } catch (\Exception $e) {
+                return (new Carbon($date))->toIso8601String();
+            } catch (Exception $e) {
                 return $date;
             }
         }

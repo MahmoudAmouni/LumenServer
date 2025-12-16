@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Candidate;
 use App\Models\Interview;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -120,7 +121,7 @@ class InterviewService
 
     private function createDefaultInterview(int $candidateId): Interview
     {
-            $candidate = \App\Models\Candidate::find($candidateId);
+            $candidate = Candidate::find($candidateId);
         $interviewerId = $candidate && $candidate->recruiter_id ? $candidate->recruiter_id : 1;
             
             $interview = new Interview();

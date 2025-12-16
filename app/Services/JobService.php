@@ -3,8 +3,9 @@ namespace App\Services;
 
 use App\Models\Job;
 use App\Models\CompanyName;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class JobService
 {
@@ -16,7 +17,6 @@ class JobService
 
     public function getJobsByCompanyId(Request $request, int $companyId)
     {
-        // Check if company exists
         $company = CompanyName::find($companyId);
         if (!$company) {
             throw new ModelNotFoundException("Company not found");
@@ -30,14 +30,12 @@ class JobService
             ->orderBy('id')
             ->cursorPaginate($perPage);
 
-        // If no jobs found, still return empty result (not an error)
         return $jobs;
     }
 
     public function createJob(array $data)
     {
-        // Use database transaction to ensure atomicity
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data) {
             $job = $this->createJobRecord($data);
 
             $this->attachSkillsToJob($job->id, $data['skills'] ?? []);

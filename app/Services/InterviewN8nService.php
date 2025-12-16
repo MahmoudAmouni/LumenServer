@@ -4,15 +4,17 @@ namespace App\Services;
 
 use App\Models\Interview;
 use App\Models\PipelineStages;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Http;
+use InvalidArgumentException;
+use RuntimeException;
 
 class InterviewN8nService
 {
-    public function __construct(){}
+    private const HTTP_TIMEOUT_SECONDS = 180;
 
-    public function sendPostInterviewWorkflow(int $interviewId, string $notes)
+    public function sendPostInterviewWorkflow(int $interviewId, string $notes): array
     {
-        // load interview with necessary relationships
         $interview = Interview::with([
             'candidate',
             'scorecards.scorelabel',
@@ -24,29 +26,19 @@ class InterviewN8nService
         ])->find($interviewId);
         
         if (!$interview) {
-            return [
-                'success' => false,
-                'error' => 'Interview not found',
-            ];
+            throw new ModelNotFoundException('Interview not found');
         }
 
-        // get labels from scorecards
         $labels = $this->formatScorecardLabels($interview->scorecards);
 
-        // get candidate email
         $email = $interview->candidate->email ?? null;
 
         if (!$email) {
-            return [
-                'success' => false,
-                'error' => 'Candidate email not found',
-            ];
+            throw new InvalidArgumentException('Candidate email not found');
         }
 
-        // get next pipeline stage
         $nextPipelineStage = $this->getNextPipelineStage($interview);
 
-        // prepare data payload
         $payload = [
             'notes' => $notes,
             'labels' => $labels,
@@ -54,39 +46,29 @@ class InterviewN8nService
             'next_stage' => $nextPipelineStage,
         ];
 
-        // send to n8n
         $n8nUrl = config('services.n8n.summarize_notes_webhook');
 
         if (!$n8nUrl) {
-            return [
-                'success' => false,
-                'error' => 'N8N webhook URL not configured',
-            ];
+            throw new RuntimeException('N8N webhook URL not configured');
         }
 
-        $response = Http::timeout(180)
+        $response = Http::timeout(self::HTTP_TIMEOUT_SECONDS)
             ->post($n8nUrl, $payload);
 
         if (!$response->successful()) {
-            return [
-                'success' => false,
-                'error' => 'N8N request failed',
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ];
+            throw new RuntimeException(
+                'N8N request failed: ' . $response->status() . ' - ' . $response->body()
+            );
         }
 
-        return [
-            'success' => true,
-            'data' => $response->json(),
-        ];
+        return $response->json() ?? [];
     }
 
     private function formatScorecardLabels($scorecards): array
     {
         return $scorecards
             ->map(function ($scorecard) {
-                return $scorecard->scorelabel ? $scorecard->scorelabel->name : null;
+                return $scorecard->scorelabel?->name;
             })
             ->filter()
             ->unique()
@@ -94,7 +76,7 @@ class InterviewN8nService
             ->toArray();
     }
 
-    private function getNextPipelineStage(Interview $interview)
+    private function getNextPipelineStage(Interview $interview): ?string
     {
         $candidate = $interview->candidate;
         
@@ -102,10 +84,8 @@ class InterviewN8nService
             return null;
         }
 
-        // try to get job from scorecards first
         $job = $interview->scorecards->first()?->job;
         
-        // if no job from scorecards, get from candidate's most recent pipeline stage
         if (!$job) {
             $currentPipelineStage = $candidate->candidatePipelineStages
                 ->sortByDesc('moved_at')
@@ -118,7 +98,6 @@ class InterviewN8nService
             return null;
         }
 
-        // get the most recent pipeline stage for this candidate and job
         $currentPipelineStage = $candidate->candidatePipelineStages
             ->where('job_id', $job->id)
             ->sortByDesc('moved_at')
@@ -140,13 +119,11 @@ class InterviewN8nService
             return null;
         }
 
-        // Get all pipeline stages ordered by 'order'
         $pipelineStages = PipelineStages::where('pipeline_id', $pipeline->id)
             ->with('stage')
             ->orderBy('order')
             ->get();
 
-        // Find current stage position
         $currentPosition = null;
         foreach ($pipelineStages as $index => $pipelineStage) {
             if ($pipelineStage->stage_id === $currentStage->id) {
@@ -155,7 +132,6 @@ class InterviewN8nService
             }
         }
 
-        // Get next stage
         if ($currentPosition !== null && isset($pipelineStages[$currentPosition + 1])) {
             $nextPipelineStage = $pipelineStages[$currentPosition + 1];
             return $nextPipelineStage->stage->name ?? null;

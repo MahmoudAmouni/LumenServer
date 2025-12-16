@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ScorecardService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -20,7 +21,7 @@ class ScorecardController extends Controller
             $jobId = $request->query('job_id') ? (int) $request->query('job_id') : null;
             $status = $request->query('status');
             return $this->responseJSON($this->service->getAllScorecards($candidateId, $interviewId, $jobId, $status));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -29,7 +30,7 @@ class ScorecardController extends Controller
     {
         try {
             return $this->responseJSON($this->service->getScorecardById((int) $id));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -42,7 +43,7 @@ class ScorecardController extends Controller
             return $this->responseJSON($scorecard, "success", 201);
         } catch (ValidationException $e) {
             return $this->responseJSON($e->errors(), "failure", 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
@@ -55,7 +56,7 @@ class ScorecardController extends Controller
             return $this->responseJSON($scorecard);
         } catch (ValidationException $e) {
             return $this->responseJSON($e->errors(), "failure", 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }

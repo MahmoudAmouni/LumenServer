@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateJobRequest;
 use App\Http\Requests\UpdateJobRequest;
 use App\Services\JobService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Exception;
+use Illuminate\Validation\ValidationException;
 
 class JobController extends Controller
 {
@@ -38,11 +39,10 @@ class JobController extends Controller
     public function updateJob(UpdateJobRequest $request, int $id): JsonResponse
     {
         try {
-            // Validate request
             $validated = $request->validate($request->rules());
             $job = $this->jobService->updateJob($id, $validated);
             return $this->responseJSON($job, 'success', 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (Exception $e) {
             return $this->handleException($e, 'Update job');

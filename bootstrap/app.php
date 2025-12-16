@@ -17,10 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'recruiter' => \App\Http\Middleware\RecruiterMiddleware::class,
         ]);
         
-        // Enable CORS globally for ALL requests (including 404s)
         $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
         
-        // Also prepend for API and web routes
         $middleware->api(prepend: [
             \App\Http\Middleware\CorsMiddleware::class,
         ]);
@@ -31,7 +29,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Add CORS headers to ALL exception responses (404, 500, etc.)
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
             
