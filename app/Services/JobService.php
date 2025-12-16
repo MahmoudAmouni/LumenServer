@@ -121,7 +121,7 @@ class JobService
                 'jobLocation' => ['nullable', 'string'],
                 'employmentType' => ['nullable', 'string'],
                 'jobLevel' => ['nullable', 'string'],
-                'status' => ['nullable', 'string', 'in:open,closed,draft,paused'],
+                'status' => ['nullable', 'string', 'in:open,closed'],
 
                 'skills' => ['nullable', 'array'],
                 'skills.*.name' => ['required', 'string'],

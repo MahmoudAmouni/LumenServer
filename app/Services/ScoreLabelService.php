@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 class ScoreLabelService
 {
-    public function createScoreLabels(array $scoreLabels): void
+    public function createScoreLabels(array $scoreLabels)
     {
         if (empty($scoreLabels)) {
             return;
@@ -22,7 +22,7 @@ class ScoreLabelService
 
         $labelNames = array_unique($labelNames);
 
-        // find labels taht exist in the db
+        // find labels that exist in the db
         $existingLabels = ScoreLabel::whereIn('name', $labelNames)
             ->pluck('name')
             ->toArray();
