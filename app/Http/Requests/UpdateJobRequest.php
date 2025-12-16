@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\JobStatus;
-use Illuminate\Http\Request as BaseRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateJobRequest extends BaseRequest
+class UpdateJobRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,7 +14,9 @@ class UpdateJobRequest extends BaseRequest
 
     public function rules(): array
     {
-        return [
+        $jobStatusValues = class_exists(\App\Enums\JobStatus::class) ? \App\Enums\JobStatus::values() : [];
+
+        $rules = [
             'recruiter_id' => ['sometimes', 'integer', 'exists:users,id'],
             'company_id' => ['sometimes', 'integer', 'exists:company_names,id'],
             'jobTitle' => ['sometimes', 'string', 'max:255'],
@@ -23,8 +24,15 @@ class UpdateJobRequest extends BaseRequest
             'jobLocation' => ['nullable', 'string', 'max:255'],
             'employmentType' => ['nullable', 'string', 'max:255'],
             'jobLevel' => ['nullable', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', Rule::in(JobStatus::values())],
         ];
+
+        if (!empty($jobStatusValues)) {
+            $rules['status'] = ['sometimes', 'string', Rule::in($jobStatusValues)];
+        } else {
+            $rules['status'] = ['sometimes', 'string'];
+        }
+
+        return $rules;
     }
 }
 
