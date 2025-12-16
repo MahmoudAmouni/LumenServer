@@ -12,17 +12,9 @@ class AuthService
 {
     public function register(array $data): array
     {
-        $data = $this->validateInput($data, $this->registerRules());
-
-        $user = new User();
-        $user->type_id = $data['type_id'];
-        $user->company_id = $data['company_id'] ?? null;
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        $user->password = Hash::make($data['password']);;
-        $user->save();
-
-        $token = JWTAuth::fromUser($user);
+        $validated = $this->validateInput($data, $this->registerRules());
+        $user = $this->createUser($validated);
+        $token = $this->generateToken($user);
         $user->load('userType');
 
         return [
@@ -38,15 +30,8 @@ class AuthService
             $this->loginRules()
         );
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $token = JWTAuth::fromUser($user);
+        $user = $this->authenticateUser($validated['email'], $validated['password']);
+        $token = $this->generateToken($user);
         $user->load('userType');
 
         return [
@@ -88,5 +73,36 @@ class AuthService
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    private function createUser(array $data): User
+    {
+        $user = new User();
+        $user->type_id = $data['type_id'];
+        $user->company_id = $data['company_id'] ?? null;
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        $user->password = Hash::make($data['password']);
+        $user->save();
+
+        return $user;
+    }
+
+    private function authenticateUser(string $email, string $password): User
+    {
+        $user = User::where('email', $email)->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        return $user;
+    }
+
+    private function generateToken(User $user): string
+    {
+        return JWTAuth::fromUser($user);
     }
 }

@@ -28,5 +28,33 @@ class InterviewController extends Controller
             return $this->responseJSON(null, 'Update failed', 500);
         }
     }
+
+    /**
+     * Update interview notes by candidate_id and job_id
+     */
+    public function updateInterviewNotes(Request $request): JsonResponse
+    {
+        try {
+            $candidateId = $request->input('candidate_id');
+            $jobId = $request->input('job_id');
+            $notes = $request->input('notes', '');
+
+            if (!$candidateId || !$jobId) {
+                return $this->responseJSON(null, 'candidate_id and job_id are required', 400);
+            }
+
+            $result = $this->interviewService->updateInterviewNotesByCandidateAndJob(
+                (int) $candidateId,
+                (int) $jobId,
+                $notes
+            );
+            
+            return $this->responseJSON($result, 'success', 200);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON(null, 'Interview not found', 404);
+        } catch (Exception $e) {
+            return $this->responseJSON(null, 'Update failed: ' . $e->getMessage(), 500);
+        }
+    }
 }
 

@@ -37,13 +37,7 @@ class OfferService
 
     public function getOfferById(int $id)
     {
-        $validator = Validator::make(['id' => $id], [
-            'id' => ['required', 'integer', 'exists:offers,id'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        $this->validateOfferId($id);
 
         $offer = Offer::with(['candidate', 'job', 'recruiter'])->find($id);
         
@@ -54,30 +48,34 @@ class OfferService
         return $offer;
     }
 
-    public function createOrUpdateOffer(array $data, ?int $id = null)
+    private function validateOfferId(int $id): void
     {
-        $rules = [
-            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'salary' => ['nullable', 'numeric'],
-            'start_date' => ['nullable', 'date'],
-            'contract_type' => ['nullable', 'string'],
-            'offer_letter_template' => ['nullable', 'string'],
-            'status' => ['nullable', 'string', 'in:draft,pending,accepted,rejected'],
-            'recruiter_id' => ['nullable', 'integer', 'exists:users,id'],
-        ];
+        $data = ['id' => $id];
+        $rules = $this->getOfferIdValidationRules();
 
-        if ($id !== null) {
-            $rules['id'] = ['required', 'integer', 'exists:offers,id'];
-        }
-
-        $validator = Validator::make(array_merge($data, ['id' => $id]), $rules);
+        $validator = Validator::make($data, $rules);
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
+    }
 
-        $validated = $validator->validated();
+    private function getOfferIdValidationRules(): array
+    {
+        return [
+            'id' => ['required', 'integer', 'exists:offers,id'],
+        ];
+    }
+
+    public function createOrUpdateOffer(array $data, ?int $id = null)
+    {
+        $isUpdate = $id !== null;
+        
+        if ($id !== null) {
+            $data['id'] = $id;
+        }
+
+        $validated = $this->validateOfferData($data, $isUpdate);
 
         if ($id === null) {
             $offer = new Offer();
@@ -103,13 +101,7 @@ class OfferService
 
     public function deleteOffer(int $id)
     {
-        $validator = Validator::make(['id' => $id], [
-            'id' => ['required', 'integer', 'exists:offers,id'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        $this->validateOfferId($id);
 
         $offer = Offer::find($id);
         
@@ -124,17 +116,7 @@ class OfferService
 
     public function sendOffersToCandidatesInOfferStage(int $jobId, int $pipelineStageId)
     {
-        $validator = Validator::make([
-            'job_id' => $jobId,
-            'pipeline_stage_id' => $pipelineStageId,
-        ], [
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'pipeline_stage_id' => ['required', 'integer', 'exists:stages,id'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        $this->validateSendOffersInput($jobId, $pipelineStageId);
 
         $candidatePipelineStages = CandidatePipelineStage::with([
             'candidate',
@@ -162,26 +144,31 @@ class OfferService
             ];
         }
 
-        $results = [];
-        foreach ($candidatePipelineStages as $candidatePipelineStage) {
-            try {
-                $workflowResult = $this->triggerOfferStageWorkflow($candidatePipelineStage->id);
-                $results[] = [
-                    'candidate_id' => $candidatePipelineStage->candidate_id,
-                    'candidate_pipeline_stage_id' => $candidatePipelineStage->id,
-                    'status' => 'success',
-                    'workflow_result' => $workflowResult
-                ];
-            } catch (\Exception $e) {
-                Log::error('Failed to send offer to candidate ' . $candidatePipelineStage->candidate_id . ': ' . $e->getMessage());
-                $results[] = [
-                    'candidate_id' => $candidatePipelineStage->candidate_id,
-                    'candidate_pipeline_stage_id' => $candidatePipelineStage->id,
-                    'status' => 'failed',
-                    'error' => $e->getMessage()
-                ];
-            }
-        }
+        $results = collect($candidatePipelineStages)
+            ->map(function ($candidatePipelineStage) {
+                try {
+                    $workflowResult = $this->triggerOfferStageWorkflow($candidatePipelineStage->id);
+                    return [
+                        'candidate_id'                 => $candidatePipelineStage->candidate_id,
+                        'candidate_pipeline_stage_id'  => $candidatePipelineStage->id,
+                        'status'                       => 'success',
+                        'workflow_result'              => $workflowResult,
+                    ];
+                } catch (\Exception $e) {
+                    Log::error(
+                        'Failed to send offer to candidate ' .
+                        $candidatePipelineStage->candidate_id .
+                        ': ' . $e->getMessage()
+                    );
+                    return [
+                        'candidate_id'                 => $candidatePipelineStage->candidate_id,
+                        'candidate_pipeline_stage_id'  => $candidatePipelineStage->id,
+                        'status'                       => 'failed',
+                        'error'                        => $e->getMessage(),
+                    ];
+                }
+            })
+            ->all();
 
         return [
             'status' => 'completed',
@@ -192,13 +179,7 @@ class OfferService
 
     public function triggerOfferStageWorkflow(int $candidatePipelineStageId)
     {
-        $validator = Validator::make(['candidate_pipeline_stage_id' => $candidatePipelineStageId], [
-            'candidate_pipeline_stage_id' => ['required', 'integer', 'exists:candidate_pipeline_stages,id'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        $this->validateTriggerWorkflowInput($candidatePipelineStageId);
 
         $candidatePipelineStage = CandidatePipelineStage::with(['candidate', 'pipelineStage', 'job'])
             ->find($candidatePipelineStageId);
@@ -363,5 +344,93 @@ class OfferService
         ]);
 
         return true;
+    }
+
+    private function validateOfferData(array $data, bool $isUpdate): array
+    {
+        $rules = $isUpdate 
+            ? $this->getUpdateValidationRules($data)
+            : $this->getCreateValidationRules();
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        return $validator->validated();
+    }
+
+    private function getCreateValidationRules(): array
+    {
+        return [
+            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'salary' => ['nullable', 'numeric'],
+            'start_date' => ['nullable', 'date'],
+            'contract_type' => ['nullable', 'string'],
+            'offer_letter_template' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:draft,pending,accepted,rejected'],
+            'recruiter_id' => ['nullable', 'integer', 'exists:users,id'],
+        ];
+    }
+
+    private function getUpdateValidationRules(array $data): array
+    {
+        $baseRules = [
+            'id' => ['required', 'integer', 'exists:offers,id'],
+            'candidate_id' => ['integer', 'exists:candidates,id'],
+            'job_id' => ['integer', 'exists:jobs,id'],
+            'salary' => ['nullable', 'numeric'],
+            'start_date' => ['nullable', 'date'],
+            'contract_type' => ['nullable', 'string'],
+            'offer_letter_template' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:draft,pending,accepted,rejected'],
+            'recruiter_id' => ['nullable', 'integer', 'exists:users,id'],
+        ];
+
+        return array_intersect_key($baseRules, $data);
+    }
+
+    private function validateSendOffersInput(int $jobId, int $pipelineStageId): void
+    {
+        $data = [
+            'job_id' => $jobId,
+            'pipeline_stage_id' => $pipelineStageId,
+        ];
+        $rules = $this->getSendOffersValidationRules();
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+    }
+
+    private function getSendOffersValidationRules(): array
+    {
+        return [
+            'job_id' => ['required', 'integer', 'exists:jobs,id'],
+            'pipeline_stage_id' => ['required', 'integer', 'exists:stages,id'],
+        ];
+    }
+
+    private function validateTriggerWorkflowInput(int $candidatePipelineStageId): void
+    {
+        $data = ['candidate_pipeline_stage_id' => $candidatePipelineStageId];
+        $rules = $this->getTriggerWorkflowValidationRules();
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+    }
+
+    private function getTriggerWorkflowValidationRules(): array
+    {
+        return [
+            'candidate_pipeline_stage_id' => ['required', 'integer', 'exists:candidate_pipeline_stages,id'],
+        ];
     }
 }

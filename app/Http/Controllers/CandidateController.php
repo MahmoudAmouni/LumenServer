@@ -70,7 +70,7 @@ class CandidateController extends Controller
     public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null)
     {
         try {
-            // If pipelineStageId is not provided in route, check query parameters
+            // If pipelineStageId is not provided  . check query parameters
             if ($pipelineStageId === null) {
                 // Check for stage_id (numeric) or stage_name (string)
                 $pipelineStageId = $request->query('pipeline_stage_id') 
@@ -79,8 +79,21 @@ class CandidateController extends Controller
                         ? $request->query('stage_name') 
                         : null);
             }
+
+            // Optional pagination
+            $perPage = $request->query('per_page');
+            $page = $request->query('page');
+            $perPage = $perPage !== null ? max(1, min((int) $perPage, 100)) : null;
+            $page = $page !== null ? max(1, (int) $page) : 1;
             
-            return $this->responseJSON($this->service->getCandidatesByJobIdAndPipelineStage((int) $jobId, $pipelineStageId));
+            return $this->responseJSON(
+                $this->service->getCandidatesByJobIdAndPipelineStage(
+                    (int) $jobId,
+                    $pipelineStageId,
+                    $perPage,
+                    $page
+                )
+            );
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
