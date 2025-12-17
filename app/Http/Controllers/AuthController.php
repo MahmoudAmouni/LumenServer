@@ -30,11 +30,23 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         try {
-            $data = $request->all();
+            // Handle JSON requests - try multiple methods for compatibility
+            $data = [];
             
+            // First, try to get JSON data if method exists (Laravel)
+            if (method_exists($request, 'json') && $request->json()) {
+                $data = $request->json()->all();
+            }
+            
+            // Fallback to regular request data (works in both Laravel and Lumen)
+            if (empty($data)) {
+                $data = $request->all();
+            }
+            
+            // If still empty, try parsing raw content manually
             if (empty($data) && $request->getContent()) {
                 $jsonData = json_decode($request->getContent(), true);
-                if ($jsonData) {
+                if (json_last_error() === JSON_ERROR_NONE && $jsonData) {
                     $data = $jsonData;
                 }
             }

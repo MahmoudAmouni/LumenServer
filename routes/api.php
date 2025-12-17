@@ -13,7 +13,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SkillController;
 use Illuminate\Support\Facades\Route;
 
-Route::options('{any}', function () {
+Route::match(['options'], '{any}', function () {
     return response('', 200)
         ->header('Access-Control-Allow-Origin', '*')
         ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
@@ -82,4 +82,6 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::post('/offers/add', [OfferController::class, 'createOrUpdateOffer']);
     Route::post('/offers/{id}', [OfferController::class, 'createOrUpdateOffer']);
     Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
+    
+    Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
 });

@@ -31,6 +31,8 @@ class JobController extends Controller
         try {
             $job = $this->jobService->createJob($request->validated());
             return $this->responseJSON($job, 'success', 201);
+        } catch (ValidationException $e) {
+            return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (Exception $e) {
             return $this->handleException($e, 'Create job');
         }

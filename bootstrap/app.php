@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CorsMiddleware;
+use App\Http\Middleware\RecruiterMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,29 +18,44 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'recruiter' => \App\Http\Middleware\RecruiterMiddleware::class,
+            'admin' => AdminMiddleware::class,
+            'recruiter' => RecruiterMiddleware::class,
         ]);
         
-        $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
+        $middleware->append(CorsMiddleware::class);
         
         $middleware->api(prepend: [
-            \App\Http\Middleware\CorsMiddleware::class,
+            CorsMiddleware::class,
         ]);
         
         $middleware->web(prepend: [
-            \App\Http\Middleware\CorsMiddleware::class,
+            CorsMiddleware::class,
         ]);
     })
     
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
-            $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->getMethod() === 'OPTIONS') {
+                return response('', 200)
+                    ->header('Access-Control-Allow-Origin', '*')
+                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+                    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin')
+                    ->header('Access-Control-Max-Age', '86400');
+            }
             
-            $response = response()->json([
-                'status' => 'failure',
-                'payload' => $e->getMessage() ?: 'An error occurred'
-            ], $statusCode);
+            if ($e instanceof ValidationException) {
+                $response = response()->json([
+                    'status' => 'Validation failed',
+                    'payload' => $e->errors()
+                ], 422);
+            } else {
+                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                
+                $response = response()->json([
+                    'status' => 'failure',
+                    'payload' => $e->getMessage() ?: 'An error occurred'
+                ], $statusCode);
+            }
             
             return $response
                 ->header('Access-Control-Allow-Origin', '*')

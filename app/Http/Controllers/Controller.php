@@ -26,7 +26,7 @@ abstract class Controller
             return $this->responseJSON('Resource not found', 'failure', 404);
         }
 
-        if ($e instanceof ValidationException) {
+        if ($e instanceof ValidationException || method_exists($e, 'errors')) {
             return $this->responseJSON($e->errors(), 'Validation failed', 422);
         }
 

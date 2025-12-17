@@ -2,12 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\JobStatus;
-use App\Enums\SkillType;
-use Illuminate\Http\Request as BaseRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class CreateJobRequest extends BaseRequest
+class CreateJobRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +14,10 @@ class CreateJobRequest extends BaseRequest
 
     public function rules(): array
     {
-        return [
+        $jobStatusValues = class_exists(\App\Enums\JobStatus::class) ? \App\Enums\JobStatus::values() : [];
+        $skillTypeValues = class_exists(\App\Enums\SkillType::class) ? \App\Enums\SkillType::values() : [];
+
+        $rules = [
             'recruiter_id' => ['required', 'integer', 'exists:users,id'],
             'company_id' => ['required', 'integer', 'exists:company_names,id'],
             'jobTitle' => ['required', 'string', 'max:255'],
@@ -24,25 +25,44 @@ class CreateJobRequest extends BaseRequest
             'jobLocation' => ['nullable', 'string', 'max:255'],
             'employmentType' => ['nullable', 'string', 'max:255'],
             'jobLevel' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', Rule::in(JobStatus::values())],
             'skills' => ['nullable', 'array'],
-            'skills.*.name' => ['required', 'string', 'max:255'],
-            'skills.*.type' => ['required', 'integer', Rule::in(SkillType::values())],
+            'skills.*.name' => ['required_with:skills', 'string', 'max:255'],
+            'skills.*.type' => ['required_with:skills', 'integer'],
             'pipeline' => ['nullable', 'array'],
-            'pipeline.*.name' => ['required', 'string', 'max:255'],
+            'pipeline.*.name' => ['required_with:pipeline', 'string', 'max:255'],
             'criteria' => ['nullable', 'array'],
-            'criteria.*.name' => ['required', 'string', 'max:255'],
+            'criteria.*.name' => ['required_with:criteria', 'string', 'max:255'],
         ];
+
+        if (!empty($jobStatusValues)) {
+            $rules['status'] = ['nullable', 'string', Rule::in($jobStatusValues)];
+        } else {
+            $rules['status'] = ['nullable', 'string'];
+        }
+
+        if (!empty($skillTypeValues)) {
+            $rules['skills.*.type'][] = Rule::in($skillTypeValues);
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
-        return [
-            'recruiter_id.exists' => 'The selected recruiter does not exist.',
-            'company_id.exists' => 'The selected company does not exist.',
-            'status.in' => 'Status must be one of: ' . implode(', ', JobStatus::values()),
-            'skills.*.type.in' => 'Skill type must be 1 (required) or 2 (nice to have).',
+        $messages = [
+            'recruiter_id.exists' => __('The selected recruiter does not exist.'),
+            'company_id.exists' => __('The selected company does not exist.'),
         ];
+
+        if (class_exists(\App\Enums\JobStatus::class)) {
+            $messages['status.in'] = __('Status must be one of: :values', ['values' => implode(', ', \App\Enums\JobStatus::values())]);
+        }
+
+        if (class_exists(\App\Enums\SkillType::class)) {
+            $messages['skills.*.type.in'] = __('Skill type must be one of: :values', ['values' => implode(', ', \App\Enums\SkillType::values())]);
+        }
+
+        return $messages;
     }
 }
 
