@@ -19,13 +19,10 @@ class CorsMiddleware
                 ->header('Access-Control-Max-Age', '86400');
         }
 
-        try {
-            $response = $next($request);
-        } catch (Exception $e) {
-            $response = response()->json([
-                'status' => 'failure',
-                'payload' => 'Route not found. Use /api/login instead of /login'
-            ], 404);
+        $response = $next($request);
+
+        if (!$response instanceof Response) {
+            $response = response($response);
         }
 
         return $response

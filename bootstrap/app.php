@@ -35,6 +35,14 @@ return Application::configure(basePath: dirname(__DIR__))
     
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->getMethod() === 'OPTIONS') {
+                return response('', 200)
+                    ->header('Access-Control-Allow-Origin', '*')
+                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+                    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin')
+                    ->header('Access-Control-Max-Age', '86400');
+            }
+            
             if ($e instanceof ValidationException) {
                 $response = response()->json([
                     'status' => 'Validation failed',
