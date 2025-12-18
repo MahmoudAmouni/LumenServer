@@ -18,6 +18,8 @@ class Offer extends Model
         'offer_letter_template',
         'status',
         'recruiter_id',
+        'file_path',
+        'file_type',
     ];
 
     public function candidate()

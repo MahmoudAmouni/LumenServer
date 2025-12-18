@@ -33,12 +33,12 @@ class AuthController extends Controller
             // Handle JSON requests - try multiple methods for compatibility
             $data = [];
             
-            // First, try to get JSON data if method exists (Laravel)
+            // First, try to get JSON data if method exists 
             if (method_exists($request, 'json') && $request->json()) {
                 $data = $request->json()->all();
             }
             
-            // Fallback to regular request data (works in both Laravel and Lumen)
+            // Fallback to regular request data
             if (empty($data)) {
                 $data = $request->all();
             }

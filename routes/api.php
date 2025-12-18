@@ -11,6 +11,8 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SkillController;
+use App\Http\Controllers\OfferStageWorkflowController;
+use App\Http\Controllers\N8nOfferController;
 use Illuminate\Support\Facades\Route;
 
 Route::match(['options'], '{any}', function () {
@@ -23,6 +25,7 @@ Route::match(['options'], '{any}', function () {
 
 Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
+Route::post('/webhook/offer-packet', [N8nOfferController::class, 'webhookOfferPacket']);
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
 Route::post('/login', [AuthController::class, "login"]);
