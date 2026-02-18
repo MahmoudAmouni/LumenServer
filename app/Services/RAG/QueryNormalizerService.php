@@ -5,8 +5,8 @@ namespace App\Services\RAG;
 use App\Services\PromptLoaderService;
 use OpenAI\Laravel\Facades\OpenAI;
 
-class QueryNormalizerService
-{
+class QueryNormalizerService{
+    
     public function normalize(string $question): string{
         $response = OpenAI::chat()->create([
             'model' => 'gpt-4.1-mini',

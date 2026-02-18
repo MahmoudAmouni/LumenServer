@@ -7,8 +7,8 @@ use App\Services\RAG\QueryNormalizerService;
 use GuzzleHttp\Client;
 use OpenAI\Laravel\Facades\OpenAI;
 
-class RagQueryService
-{
+class RagQueryService{
+    
     protected Client $qdrant;
 
     public function __construct(protected QueryNormalizerService $query_normalizer){
