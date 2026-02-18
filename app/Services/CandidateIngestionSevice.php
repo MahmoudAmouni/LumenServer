@@ -53,16 +53,16 @@ class CandidateIngestionService{
 
     protected function buildCVSource(Candidate $candidate){
         $sources = [];
-        if(!$candidate->attachments){
+        if(!$candidate->cv_path){
             return [];
         }
 
     
         $cv_extractor = new CVExtractionService();
-        $cvText = $this->cleanUtf8($cv_extractor->extract($candidate->attachments));
+        $cvText = $this->cleanUtf8($cv_extractor->extract($candidate->cv_path));
 
         $splitter = new CVSectionSplitter();
-        $sections = $splitter->split($cvText);// Summary/about, Skills, Education....
+        $sections = $splitter->split($cvText);
 
         foreach($sections as $sectionName => $sectionText){
             $sources[] = [
@@ -78,7 +78,7 @@ class CandidateIngestionService{
     public function ingestInterviewNotes(int $interviewId): void{
         $interview = Interview::findOrFail($interviewId);
 
-        if (! $interview->notes || $interview->notes === ""){ // fail silently
+        if (!$interview->notes || $interview->notes === ""){ // fail silently
             return;
         }
 
@@ -90,7 +90,7 @@ class CandidateIngestionService{
             candidateId: $interview->candidate_id,
             text: $interview->notes,
             sourceType: 'interview_notes',
-            sourceLabel: 'Interview : ' . $interview->type,
+            sourceLabel: 'Interview Notes',
             sourceSection : 'Interview notes',
             extraPayload: [
                 'interview_id' => $interviewId
