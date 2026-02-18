@@ -8,17 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-             Schema::create('pipelines', function (Blueprint $table) {
-                $table->id();
-                $table->string('name');
-                $table->unsignedBigInteger('job_id');
-            
-                $table->timestamps();
-
-
-
-
-            });
+        Schema::create('pipelines', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->unsignedBigInteger('job_id');
+            $table->timestamps();
+        });
     }
 
     public function down(): void

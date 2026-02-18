@@ -8,7 +8,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) { 
-              
             $table->id();  
             $table->unsignedBigInteger('company_id')->nullable(); 
             $table->unsignedBigInteger('type_id');
@@ -19,8 +18,6 @@ return new class extends Migration {
             $table->rememberToken();
             $table->softDeletes();
         });
-
-
     }
 
     public function down(): void

@@ -8,13 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-           Schema::create('documents', function (Blueprint $table) {
-
-              $table->id();
-              $table->unsignedBigInteger('candidate_id');
-              $table->string('file_path');
-              $table->timestamps();
-            });
+        Schema::create('documents', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('candidate_id');
+            $table->string('file_path');
+            $table->timestamps();
+        });
     }
 
     public function down(): void
