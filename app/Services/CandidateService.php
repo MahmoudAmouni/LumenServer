@@ -473,7 +473,7 @@ class CandidateService
             if (!empty($updateData)) {
                 $candidate->update($updateData);
             }
-        }
+    }
 
     private function findStageForJob(int $jobId, string $stageName): Stage
     {

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Jobs\IngestCandidateCv;
 use App\Models\Candidate;
+use App\Services\Candidate\CandidateIngestionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -168,56 +170,64 @@ class CandidateImportN8nService
         ];
     }
 
-    private function insertAndAttachCvs(array $insertRows, array $meta, int $recruiterId, bool $useTimestamps, $batchTime): array{
+    private function insertAndAttachCvs(
+        array $insertRows,
+        array $meta,
+        int $recruiterId,
+        bool $useTimestamps,
+        $batchTime
+    ): array {
+
         $out = [];
+        $candidateIds = [];
 
         DB::beginTransaction();
+
         try {
-            Candidate::insert($insertRows);
 
-            $emails = array_values(array_unique(array_column($meta, 'email')));
+            foreach (array_chunk($insertRows, 500) as $batch) {
 
-            $query = Candidate::query()
-                ->where('recruiter_id', $recruiterId)
-                ->whereIn('email', $emails);
-
-            if ($useTimestamps) {
-                $query->where('created_at', $batchTime);
+                foreach ($batch as $row) {
+                    $candidate = Candidate::create($row);
+                    $candidateIds[$row['email']] = $candidate->id;
+                }
             }
 
-            $inserted = $query->get(['id', 'email']);
+            collect($meta)->each(function ($m) use (
+                &$out,
+                &$candidateIds,
+                $useTimestamps
+            ) {
 
-            $emailToId = $inserted
-                ->groupBy('email')
-                ->map(fn($group) => $group->max('id'))
-                ->all();
-
-            collect($meta)->each(function ($m) use (&$out, $emailToId, $useTimestamps) {
                 $email = $m['email'];
-                $candidateId = $emailToId[$email] ?? null;
+                $candidateId = $candidateIds[$email] ?? null;
 
-                if(!$candidateId){
+                if (!$candidateId) {
                     $out[] = [
                         'status' => 'failed',
                         'row'    => $m['row_number'],
                         'email'  => $email,
-                        'error'  => 'Candidate inserted but ID not found for batch',
+                        'error'  => 'Candidate inserted but ID not found',
                     ];
                     return;
                 }
 
                 $cvPath = null;
 
-                if(!empty($m['cv_drive_url'])){
+                if (!empty($m['cv_drive_url'])) {
                     try {
-                        $cvPath = $this->driveCv->storeFromDriveUrl($m['cv_drive_url'], $candidateId);
+
+                        $cvPath = $this->driveCv
+                            ->storeFromDriveUrl($m['cv_drive_url'], $candidateId);
 
                         Candidate::whereKey($candidateId)->update(
                             $useTimestamps
                                 ? ['cv_path' => $cvPath, 'updated_at' => now()]
                                 : ['cv_path' => $cvPath]
                         );
+
                     } catch (\Throwable $e) {
+
                         $out[] = [
                             'status'       => 'cv_failed',
                             'row'          => $m['row_number'],
@@ -225,6 +235,7 @@ class CandidateImportN8nService
                             'email'        => $email,
                             'error'        => $e->getMessage(),
                         ];
+
                         return;
                     }
                 }
@@ -239,19 +250,21 @@ class CandidateImportN8nService
             });
 
             DB::commit();
+
+            DB::afterCommit(function () use ($candidateIds){// dispatching jobs after commit to avoid issues with transactions
+                foreach ($candidateIds as $id){
+                    IngestCandidateCv::dispatch($id);
+                }
+            });
+
         } catch (\Throwable $e) {
+
             DB::rollBack();
             throw $e;
-        }
 
-        // dispatch ingestion jobs for every candidate into vector db
-        foreach($insertRows as $candidate){
-            $candidateId = $emailToId[$candidateId] ?? null;
-            if($candidateId){
-                dispatch($candidateId);
-            }
-        }   
+        }
 
         return $out;
     }
+
 }
