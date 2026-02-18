@@ -15,7 +15,7 @@ class CandidateImportN8nService
 
     public function importViaN8n(UploadedFile $file): array
     {
-        $recruiterId = 1;//change this once u can
+        $recruiterId = 1;//change this once u can - I guess you never could change it
 
         if (!$recruiterId) {
             return [
@@ -168,8 +168,7 @@ class CandidateImportN8nService
         ];
     }
 
-    private function insertAndAttachCvs(array $insertRows, array $meta, int $recruiterId, bool $useTimestamps, $batchTime): array
-    {
+    private function insertAndAttachCvs(array $insertRows, array $meta, int $recruiterId, bool $useTimestamps, $batchTime): array{
         $out = [];
 
         DB::beginTransaction();
@@ -197,7 +196,7 @@ class CandidateImportN8nService
                 $email = $m['email'];
                 $candidateId = $emailToId[$email] ?? null;
 
-                if (!$candidateId) {
+                if(!$candidateId){
                     $out[] = [
                         'status' => 'failed',
                         'row'    => $m['row_number'],
@@ -209,7 +208,7 @@ class CandidateImportN8nService
 
                 $cvPath = null;
 
-                if (!empty($m['cv_drive_url'])) {
+                if(!empty($m['cv_drive_url'])){
                     try {
                         $cvPath = $this->driveCv->storeFromDriveUrl($m['cv_drive_url'], $candidateId);
 
@@ -244,6 +243,14 @@ class CandidateImportN8nService
             DB::rollBack();
             throw $e;
         }
+
+        // dispatch ingestion jobs for every candidate into vector db
+        foreach($insertRows as $candidate){
+            $candidateId = $emailToId[$candidateId] ?? null;
+            if($candidateId){
+                dispatch($candidateId);
+            }
+        }   
 
         return $out;
     }
