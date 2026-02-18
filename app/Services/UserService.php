@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class UserService
-{
-    public function createUser(array $data): User
-    {
+class UserService{
+
+    public function createUser(array $data): User{
+        
         $this->validateUserData($data, isUpdate: false);
         $typeId = $this->mapRoleToTypeId($data['role']);
         $user = $this->createUserRecord($data, $typeId);
@@ -20,15 +20,14 @@ class UserService
         return $user->load(['userType', 'company']);
     }
 
-    public function getAllUsers(): array
-    {
+    public function getAllUsers(): array{
         $users = User::with(['userType', 'company'])->get();
 
         return $this->formatUsersResponse($users);
     }
 
-    public function getUsersByCompany(int $companyId): array
-    {
+    public function getUsersByCompany(int $companyId): array{
+
         $users = User::where('company_id', $companyId)
             ->with(['userType', 'company'])
             ->get();
@@ -36,8 +35,8 @@ class UserService
         return $this->formatUsersResponse($users);
     }
 
-    public function deleteUser(int $id): void
-    {
+    public function deleteUser(int $id): void{
+
         $user = User::find($id);
 
         if (!$user) {
@@ -47,8 +46,8 @@ class UserService
         $user->delete();
     }
 
-    private function validateUserData(array $data, bool $isUpdate): void
-    {
+    private function validateUserData(array $data, bool $isUpdate): void{
+
         $rules = $isUpdate 
             ? $this->getUpdateValidationRules($data)
             : $this->getCreateValidationRules();
@@ -60,8 +59,8 @@ class UserService
         }
     }
 
-    private function getCreateValidationRules(): array
-    {
+    private function getCreateValidationRules(): array{
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
