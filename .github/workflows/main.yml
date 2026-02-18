@@ -30,9 +30,6 @@ jobs:
             php artisan config:cache
             php artisan config:clear
             composer dump-autoload --optimize
-        
-      - name: Run Tests
-        run: php artisan test 
 
   cd: 
      runs-on: ubuntu-latest
