@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\IngestCandidateInterviewNotes;
 use App\Models\Candidate;
 use App\Models\Interview;
 use Illuminate\Support\Facades\Validator;
@@ -30,6 +31,9 @@ class InterviewService
     {
         $interview = $this->findOrCreateInterviewForCandidateAndJob($candidateId, $jobId);
         $interview->notes = $notes;
+
+        IngestCandidateInterviewNotes::dispatch($interview->id);
+
         $interview->save();
 
         return $interview;

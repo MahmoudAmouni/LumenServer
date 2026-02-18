@@ -84,4 +84,6 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::post('/offers/{id}/delete', [OfferController::class, 'deleteOffer']);
     
     Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
+
+    Route::post('/ask-question', [UserController::class, 'askQuestion']);
 });

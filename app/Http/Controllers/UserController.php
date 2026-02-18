@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\RAG\RagQueryService;
 use App\Services\UserService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,6 +57,20 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->responseJSON($e->getMessage(), "failure", 404);
         } catch (Exception $e) {
+            return $this->responseJSON($e->getMessage(), "failure", 400);
+        }
+    }
+
+    public function askQuestion(Request $request , RagQueryService $ragService){
+        try{
+            $candidate_id = $request->auth()->id;
+            $question = $request->validated()["question"];
+            $answer = $ragService->answer($candidate_id, $question);
+            return $this->responseJSON([
+                'question' => $question,
+                'answer' => $answer,
+            ], "success", 200);
+        }catch(Exception $e){
             return $this->responseJSON($e->getMessage(), "failure", 400);
         }
     }
