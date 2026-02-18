@@ -15,12 +15,11 @@ class IngestCandidateInterviewNotes implements ShouldQueue{
 
     public int $interviewId;
 
-    public function __construct(int $interviewId) {
+    public function __construct(int $interviewId){
         $this->interviewId = $interviewId;
     }
 
-    public function handle(CandidateIngestionService $service)
-    {
+    public function handle(CandidateIngestionService $service): void{
         $service->ingestInterviewNotes($this->interviewId);
     }
 }

@@ -24,8 +24,8 @@ class IngestCandidateCv implements ShouldQueue
         $this->candidateId = $candidateId;
     }
 
-    public function handle(CandidatengestionService $service): void
-    {
+    public function handle(CandidateIngestionService $service): void{
+
         $service->ingest($this->candidateId);
     }
 }
