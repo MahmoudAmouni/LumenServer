@@ -10,12 +10,10 @@ return new class extends Migration
     {
         Schema::create('pipeline_stages', function (Blueprint $table) {
             $table->id();
-           $table->unsignedBigInteger('stage_id');
-         $table->unsignedBigInteger('pipeline_id');
-        $table->integer('order');
+            $table->unsignedBigInteger('stage_id');
+            $table->unsignedBigInteger('pipeline_id');
+            $table->integer('order');
             $table->timestamps();
-         
-
         });
     }
 

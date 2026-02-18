@@ -8,20 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-            Schema::create('scorecards', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('candidate_id');
-                $table->unsignedBigInteger('interview_id');
-                $table->string('status')->default('pending');
-                $table->integer('score_rate');
-                $table->unsignedBigInteger('job_id');
-                $table->unsignedBigInteger('scorelabel_id');
-                $table->timestamps();
-
-
-
-
-            });
+        Schema::create('scorecards', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('candidate_id');
+            $table->unsignedBigInteger('interview_id');
+            $table->string('status')->default('pending');
+            $table->integer('score_rate');
+            $table->unsignedBigInteger('job_id');
+            $table->unsignedBigInteger('scorelabel_id');
+            $table->timestamps();
+        });
     }
 
     public function down(): void

@@ -8,17 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-            Schema::create('job_skills', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('job_id');
-                $table->unsignedBigInteger('skill_id');
-                $table->integer('type'); //1 required, 2 nice to have
-                $table->timestamps();
-
-
-
-
-            });
+        Schema::create('job_skills', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('job_id');
+            $table->unsignedBigInteger('skill_id');
+            $table->integer('type'); //1 required, 2 nice to have
+            $table->timestamps();
+        });
     }
 
     public function down(): void
