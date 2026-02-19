@@ -100,9 +100,4 @@ class AuthService
 
         return $user;
     }
-
-    private function generateToken(User $user): string
-    {
-        return JWTAuth::fromUser($user);
-    }
 }
