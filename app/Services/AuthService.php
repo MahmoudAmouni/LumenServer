@@ -7,15 +7,23 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Auth;
 
 class AuthService
 {
     public function register(array $data): array
     {
-        $validated = $this->validateInput($data, $this->registerRules());
-        $user = $this->createUser($validated);
-        $token = $this->generateToken($user);
-        $user->load('userType');
+        $user = new User;
+
+        $user->type_id = $data['type_id'];
+        $user->company_id = $data['company_id'] ?? null;
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        $user->password = $data['password'];
+        
+        $user->save();
+
+        $token = Auth::login($user);
 
         return [
             'user' => $user,
@@ -23,86 +31,28 @@ class AuthService
         ];
     }
 
-    public function login(string $email, string $password): array
+    public function login(array $credentials): array
     {
-        $validated = $this->validateInput(
-            ['email' => $email, 'password' => $password],
-            $this->loginRules()
-        );
-
-        $user = $this->authenticateUser($validated['email'], $validated['password']);
-        $token = $this->generateToken($user);
-        $user->load('userType');
+        if (!$token = Auth::attempt($credentials)) {
+            return null;
+        }
 
         return [
-            'user' => $user,
-            'token' => $token,
+            'user'  => Auth::user(),
+            'token' => $token
         ];
     }
 
     public function logout(User $user): void
     {
-        JWTAuth::invalidate(JWTAuth::getToken());
+        Auth::logout();
     }
 
-    private function validateInput(array $input, array $rules): array
-    {
-        $validator = Validator::make($input, $rules);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-
-        return $validator->validated();
-    }
-
-    private function registerRules(): array
+    public function refresh(): array
     {
         return [
-            'name' => ['required', 'string'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
-            'type_id' => ['required', 'integer'],
-            'company_id' => ['nullable', 'integer'],
+            'user'  => Auth::user(),
+            'token' => Auth::refresh(),
         ];
-    }
-
-    private function loginRules(): array
-    {
-        return [
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ];
-    }
-
-    private function createUser(array $data): User
-    {
-        $user = new User();
-        $user->type_id = $data['type_id'];
-        $user->company_id = $data['company_id'] ?? null;
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        $user->password = Hash::make($data['password']);
-        $user->save();
-
-        return $user;
-    }
-
-    private function authenticateUser(string $email, string $password): User
-    {
-        $user = User::where('email', $email)->first();
-
-        if (!$user || !Hash::check($password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        return $user;
-    }
-
-    private function generateToken(User $user): string
-    {
-        return JWTAuth::fromUser($user);
     }
 }
