@@ -10,66 +10,55 @@ use Exception;
 
 class AuthController extends Controller
 {
-    public function __construct(
-        private readonly AuthService $authService
-    ) {
+
+    private $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
     }
 
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->register($request->all());
-            return $this->responseJSON($result, 'success', 201);
-        } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), 'Validation failed', 422);
-        } catch (Exception $e) {
-            return $this->responseJSON("Duplicate", 'Registration failed: ' . $e->getMessage(), 500);
+            $result = $this->authService->register($request->validated());
+
+            $user = $result['user'];
+            $user->token = $result['token'];
+
+            return $this->responseJSON($user, "User created successfully", 201);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), 'Validation failed', 422);
         }
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
         try {
-            // Handle JSON requests - try multiple methods for compatibility
-            $data = [];
+            $credentials = $request->validated();
             
-            // First, try to get JSON data if method exists (Laravel)
-            if (method_exists($request, 'json') && $request->json()) {
-                $data = $request->json()->all();
+            $result = $this->authService->login($credentials);
+
+            if (!$result) {
+                return $this->responseJSON(null, "Invalid credentials", 401);
             }
-            
-            // Fallback to regular request data (works in both Laravel and Lumen)
-            if (empty($data)) {
-                $data = $request->all();
-            }
-            
-            // If still empty, try parsing raw content manually
-            if (empty($data) && $request->getContent()) {
-                $jsonData = json_decode($request->getContent(), true);
-                if (json_last_error() === JSON_ERROR_NONE && $jsonData) {
-                    $data = $jsonData;
-                }
-            }
-            
-            $result = $this->authService->login(
-                $data['email'] ?? null,
-                $data['password'] ?? null
-            );
-            return $this->responseJSON($result, 'success', 201);
-        } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), 'Validation failed', 422);
-        } catch (Exception $e) {
-            return $this->responseJSON("LoginError", 'Login failed: ' . $e->getMessage(), 500);
+
+            $user = $result['user'];
+            $user->token = $result['token'];
+
+            return $this->responseJSON($user, 'Login successful', 201);
+        } catch (\Exception $e) {
+            return $this->responseJSON($e->getMessage(), 'Failed to login', 422);
         }
     }
 
     public function logout(Request $request): JsonResponse
     {
         try {
-            $this->authService->logout($request->user());
-            return $this->responseJSON(['message' => 'Logged out successfully'], 'success', 201);
-        } catch (Exception $e) {
-            return $this->responseJSON("LogoutError", 'Logout failed: ' . $e->getMessage(), 500);
+            $this->authService->logout();
+            return $this->responseJSON(null, "Successfully logged out");
+        } catch (\Exception $e) {
+            return $this->responseJSON(null, "Failed to logout: " . $e->getMessage(), 500);
         }
     }
 
