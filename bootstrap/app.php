@@ -20,6 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'recruiter' => RecruiterMiddleware::class,
         ]);
 
-        $middleware->append(HandleCors::class);
+        $middleware->prepend(HandleCors::class);
     })  
     ->withExceptions()->create();
