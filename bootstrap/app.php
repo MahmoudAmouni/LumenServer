@@ -1,13 +1,11 @@
 <?php
 
+use Illuminate\Http\Middleware\HandleCors;
 use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\RecruiterMiddleware;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,15 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'recruiter' => RecruiterMiddleware::class,
         ]);
-        
-        $middleware->append(CorsMiddleware::class);
-        
-        $middleware->api(prepend: [
-            CorsMiddleware::class,
-        ]);
-        
-        $middleware->web(prepend: [
-            CorsMiddleware::class,
-        ]);
+
+        $middleware->append(HandleCors::class);
     })  
     ->withExceptions()->create();
