@@ -13,14 +13,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SkillController;
 use Illuminate\Support\Facades\Route;
 
-// Route::match(['options'], '{any}', function () {
-//     return response('', 200)
-//         ->header('Access-Control-Allow-Origin', '*')
-//         ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-//         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin')
-//         ->header('Access-Control-Max-Age', '86400');
-// })->where('any', '.*');
-
 
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
