@@ -43,7 +43,7 @@ class AuthService
         ];
     }
 
-    public function logout(User $user): void
+    public function logout(): void
     {
         Auth::logout();
     }
