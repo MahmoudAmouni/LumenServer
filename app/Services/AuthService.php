@@ -31,7 +31,7 @@ class AuthService
         ];
     }
 
-    public function login(array $credentials): array
+    public function login(array $credentials): ?array
     {
         if (!$token = Auth::attempt($credentials)) {
             return null;
