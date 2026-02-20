@@ -27,9 +27,11 @@ class User extends Authenticatable implements JWTSubject
 
     protected $dates = [];
 
-    protected $casts = [
-        'password' => 'hashed',
-    ];
+    protected function casts(): array{
+        return [
+            'password' => 'hashed',
+        ];
+    }
 
 
     public function userType()
