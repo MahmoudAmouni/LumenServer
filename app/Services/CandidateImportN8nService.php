@@ -15,17 +15,9 @@ class CandidateImportN8nService
     {
     }
 
-    public function importViaN8n(UploadedFile $file): array
+    public function importViaN8n(UploadedFile $file , int $recruiterId): array
     {
-        $recruiterId = 1;//change this once u can - I guess you never could change it
-
-        if (!$recruiterId) {
-            return [
-                'imported' => 0,
-                'rows' => [],
-                'errors' => ['Unauthenticated'],
-            ];
-        }
+        $recruiterId = $recruiterId;
 
         $n8n = $this->fetchRowsFromN8n($file, $recruiterId);
 
@@ -70,7 +62,7 @@ class CandidateImportN8nService
 
     private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array
     {
-        $n8nUrl = config('services.n8n.excel_parse_webhook');
+        $n8nUrl = config('services.n8n.excel_parse_webhook') ?? "http://localhost:5678/webhook-test/test";
 
         $res = Http::timeout(180)
             ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
