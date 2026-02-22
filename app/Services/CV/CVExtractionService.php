@@ -4,38 +4,31 @@ namespace App\Services\CV;
 
 use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Element\Text;
+use PhpOffice\PhpWord\Element\TextRun;
+
 
 class CVExtractionService{
-    private function downloadTempFile($url){
-        $url = $this->convertGoogleDriveUrl($url);
-        $response = Http::get($url);
-
-        if ($response->failed()) {
-            throw new Exception("Response failed");
-        }
-
-        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-        $extension = strtolower($extension ?: 'pdf'); 
-
-        $filename = uniqid('cv_', true) . '.' . $extension;
-        $tempPath = storage_path("app/temp_cv/" . $filename);
-
-        file_put_contents($tempPath, $response->body());
-
-        return $tempPath;
-    }
 
     public function extract($url){
-        $filePath = $this->downloadTempFile($url);
+        $isTemp = false;
+        $localPath = storage_path('app/public/' . ltrim($url, '/'));
+        Log::debug("Attempting to extract CV from URL: $url, local path: $localPath");
+
+        if (file_exists($localPath)) {
+            $filePath = $localPath;
+        } else {
+            throw new Exception("File not found at path: $localPath");
+        }
 
         if (!$filePath) {
             return null;
         }
 
         $ext = pathinfo($filePath, PATHINFO_EXTENSION);
-
         $text = null;
 
         if ($ext === "pdf") {
@@ -50,9 +43,11 @@ class CVExtractionService{
             $text = file_get_contents($filePath);
         }
 
-        // Remove the temp file
-        @unlink($filePath);
+        if ($isTemp) {
+            @unlink($filePath);
+        }
 
+        Log::debug("Extracted text length: " . strlen($text));
         return $text;
     }
 
@@ -63,33 +58,28 @@ class CVExtractionService{
         return $pdf->getText();
     }
 
+
     private function extractDocx($filePath){
         $phpWord = IOFactory::load($filePath);
         $text = "";
 
         foreach ($phpWord->getSections() as $section) {
             foreach ($section->getElements() as $element) {
-                if (method_exists($element, "getText")) {
+
+                if ($element instanceof Text) {
                     $text .= $element->getText() . "\n";
+                }
+
+                if ($element instanceof TextRun) {
+                    foreach ($element->getElements() as $runElement) {
+                        if ($runElement instanceof Text) {
+                            $text .= $runElement->getText() . "\n";
+                        }
+                    }
                 }
             }
         }
 
         return $text;
     }
-
-    private function convertGoogleDriveUrl($url){
-        // extract the file ID
-        preg_match('/\/d\/(.*?)\//', $url, $matches);
-        if (!isset($matches[1])) {
-            return $url; // Not a Google Drive link
-        }
-
-        $fileId = $matches[1];
-
-        // return direct download URL
-        return "https://drive.google.com/uc?export=download&id={$fileId}";
-    }
-
-
 }

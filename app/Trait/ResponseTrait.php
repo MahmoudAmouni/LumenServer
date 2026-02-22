@@ -5,7 +5,7 @@ namespace App\Trait;
 trait ResponseTrait
 {
 
-    static function responseJSON($payload, $status = "success", $status_code = 200)
+    function responseJSON($payload, $status = "success", $status_code = 200)
     {
         return response()->json([
             "status" => $status,

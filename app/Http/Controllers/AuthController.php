@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -38,7 +39,6 @@ class AuthController extends Controller
     {
         try {
             $credentials = $request->validated();
-            
             $result = $this->authService->login($credentials);
 
             if (!$result) {
@@ -46,9 +46,12 @@ class AuthController extends Controller
             }
 
             $user = $result['user'];
-            $user->token = $result['token'];
 
-            return $this->responseJSON($user, 'Login successful', 201);
+            return $this->responseJSON([
+                "user" => $user,
+                "token" => $result['token']
+            ], 'Login successful', 201);
+            
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), 'Failed to login', 422);
         }

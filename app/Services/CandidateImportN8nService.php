@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Jobs\IngestCandidateCv;
 use App\Models\Candidate;
+use App\Models\CandidateJob;
 use App\Services\Candidate\CandidateIngestionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class CandidateImportN8nService
 {
@@ -15,17 +17,9 @@ class CandidateImportN8nService
     {
     }
 
-    public function importViaN8n(UploadedFile $file): array
+    public function importViaN8n(UploadedFile $file , int $recruiterId , int $job_id): array
     {
-        $recruiterId = 1;//change this once u can - I guess you never could change it
-
-        if (!$recruiterId) {
-            return [
-                'imported' => 0,
-                'rows' => [],
-                'errors' => ['Unauthenticated'],
-            ];
-        }
+        $recruiterId = $recruiterId;
 
         $n8n = $this->fetchRowsFromN8n($file, $recruiterId);
 
@@ -57,6 +51,7 @@ class CandidateImportN8nService
             $batch['insertRows'],
             $batch['meta'],
             $recruiterId,
+            $job_id,
             $batch['useTimestamps'],
             $batch['batchTime']
         );
@@ -68,9 +63,8 @@ class CandidateImportN8nService
         ];
     }
 
-    private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array
-    {
-        $n8nUrl = config('services.n8n.excel_parse_webhook');
+    private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array{
+        $n8nUrl = config('services.n8n.excel_parse_webhook') ?? "http://localhost:5678/webhook-test/test";
 
         $res = Http::timeout(180)
             ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
@@ -107,8 +101,7 @@ class CandidateImportN8nService
         ];
     }
 
-    private function buildBatch(array $rows, int $recruiterId): array
-    {
+    private function buildBatch(array $rows, int $recruiterId): array{
         $candidateModel = new Candidate();
         $useTimestamps = $candidateModel->usesTimestamps();
         $batchTime = now();
@@ -174,6 +167,7 @@ class CandidateImportN8nService
         array $insertRows,
         array $meta,
         int $recruiterId,
+        int $job_id,
         bool $useTimestamps,
         $batchTime
     ): array {
@@ -185,11 +179,25 @@ class CandidateImportN8nService
 
         try {
 
+            // add to candidates table
             foreach (array_chunk($insertRows, 500) as $batch) {
 
                 foreach ($batch as $row) {
                     $candidate = Candidate::create($row);
                     $candidateIds[$row['email']] = $candidate->id;
+                }
+            }
+            
+            // add to candidate_jobs table
+            foreach (array_chunk($insertRows, 500) as $batch) {
+
+                foreach ($batch as $row) {
+                    $candidate = CandidateJob::create([
+                        "candidate_id" => $candidateIds[$row['email']],
+                        "job_id" => $job_id,
+                        "source" => "linkedin",
+                        "recruiter_id" => $recruiterId,
+                    ]);
                 }
             }
 
@@ -253,6 +261,7 @@ class CandidateImportN8nService
 
             DB::afterCommit(function () use ($candidateIds){// dispatching jobs after commit to avoid issues with transactions
                 foreach ($candidateIds as $id){
+                    Log::debug("$id");
                     IngestCandidateCv::dispatch($id);
                 }
             });

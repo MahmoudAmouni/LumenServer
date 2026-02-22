@@ -18,18 +18,9 @@ class CandidateImportN8nController extends Controller
             'file' => ['required', 'file'],
         ]);
 
-        $recruiterId = 1;//change it bas feek
+        $recruiterId = $request->input('recruiterId');
 
-        if (!$recruiterId) {
-            return response()->json([
-                'status' => 'failure',
-                'payload' => [
-                    'message' => 'Unauthenticated',
-                ],
-            ], 401);
-        }
-
-        $result = $this->service->importViaN8n($request->file('file'));
+        $result = $this->service->importViaN8n($request->file('file') , $recruiterId , $request->input('jobId'));
 
         return response()->json([
             'status' => 'success',

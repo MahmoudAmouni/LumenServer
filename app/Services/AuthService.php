@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AuthService
 {
@@ -31,8 +32,9 @@ class AuthService
         ];
     }
 
-    public function login(array $credentials): array
+    public function login(array $credentials): ?array
     {
+
         if (!$token = Auth::attempt($credentials)) {
             return null;
         }
