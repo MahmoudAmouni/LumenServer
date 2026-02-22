@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Services\Candidate;
+namespace App\Services;
 
 use App\Services\CV\CVExtractionService;
 use App\Services\CV\CVSectionSplitter;
 use App\Models\Candidate;
 use App\Models\Interview;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,6 @@ class CandidateIngestionService{
 
     public function ingest(int $candidateId){
         $candidate = Candidate::findOrFail($candidateId);
-
 
         $sources = $this->buildCVSource($candidate);
 

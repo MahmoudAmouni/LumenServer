@@ -20,7 +20,7 @@ class CandidateImportN8nController extends Controller
 
         $recruiterId = $request->input('recruiterId');
 
-        $result = $this->service->importViaN8n($request->file('file') , $recruiterId);
+        $result = $this->service->importViaN8n($request->file('file') , $recruiterId , $request->input('jobId'));
 
         return response()->json([
             'status' => 'success',
