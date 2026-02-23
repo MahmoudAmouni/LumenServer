@@ -5,19 +5,15 @@ namespace App\Http\Controllers;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
 use Exception;
-use Illuminate\Support\Facades\Log;
 
-class AuthController extends Controller
-{
+class AuthController extends Controller{
 
     private $authService;
 
-    public function __construct(AuthService $authService)
-    {
+    public function __construct(AuthService $authService){
         $this->authService = $authService;
     }
 
@@ -51,7 +47,7 @@ class AuthController extends Controller
                 "user" => $user,
                 "token" => $result['token']
             ], 'Login successful', 201);
-            
+
         } catch (\Exception $e) {
             return $this->responseJSON($e->getMessage(), 'Failed to login', 422);
         }
