@@ -3,24 +3,19 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Exception;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
-class AuthService
-{
-    public function register(array $data): array
-    {
+class AuthService{
+
+    public function register(array $data): array{
         $user = new User;
 
         $user->type_id = $data['type_id'];
         $user->company_id = $data['company_id'] ?? null;
         $user->name = $data['name'];
         $user->email = $data['email'];
-        $user->password = $data['password'];
+        $user->password = $data['password'];// hashing is handled by the model's cast
         
         $user->save();
 
@@ -32,11 +27,10 @@ class AuthService
         ];
     }
 
-    public function login(array $credentials): ?array
-    {
+    public function login(array $credentials): ?array{
 
-        if (!$token = Auth::attempt($credentials)) {
-            return null;
+        if(!$token = Auth::attempt($credentials)){
+            throw new Exception("Invalid credentials");
         }
 
         return [
@@ -45,13 +39,11 @@ class AuthService
         ];
     }
 
-    public function logout(): void
-    {
+    public function logout(): void{
         Auth::logout();
     }
 
-    public function refresh(): array
-    {
+    public function refresh(): array{
         return [
             'user'  => Auth::user(),
             'token' => Auth::refresh(),
