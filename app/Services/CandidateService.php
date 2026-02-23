@@ -108,6 +108,8 @@ class CandidateService
         return $candidatePipelineStage->load(['candidate', 'pipelineStage', 'job']);
     }
 
+    /** helpers */
+
     private function validateJobId(int $jobId): void
     {
         $data = ['job_id' => $jobId];
