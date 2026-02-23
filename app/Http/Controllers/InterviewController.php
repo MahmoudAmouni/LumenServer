@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class InterviewController extends Controller
 {
@@ -32,10 +33,12 @@ class InterviewController extends Controller
     public function updateInterviewNotes(Request $request): JsonResponse
     {
         try {
+
             $candidateId = $request->input('candidate_id');
             $jobId = $request->input('job_id');
             $notes = $request->input('notes', '');
 
+            Log::debug("Received updateInterviewNotes $notes request with candidate_id: $candidateId, job_id: $jobId");
             if (!$candidateId || !$jobId) {
                 return $this->responseJSON(null, 'candidate_id and job_id are required', 400);
             }
