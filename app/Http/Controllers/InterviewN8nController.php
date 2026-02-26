@@ -12,14 +12,14 @@ class InterviewN8nController extends Controller
 {
     public function __construct(private readonly InterviewN8nService $interviewN8nService) {}
 
-    public function sendPostInterviewWorkflow(Request $request, int $interviewId): JsonResponse
+    public function summarizeAndScoreInterview(Request $request, int $interviewId): JsonResponse
     {
         try {
             $request->validate([
                 'notes' => ['required', 'string'],
             ]);
 
-            $result = $this->interviewN8nService->sendPostInterviewWorkflow(
+            $result = $this->interviewN8nService->summarizeAndScoreInterview(
                 $interviewId,
                 $request->input('notes')
             );
