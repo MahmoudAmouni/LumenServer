@@ -8,18 +8,17 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class JobService
-{
+class JobService{
+
     public function __construct(
         private readonly PipelineService $pipelineService,
         private readonly JobSkillService $jobSkillService,
         private readonly ScoreLabelService $scoreLabelService
     ) {}
 
-    public function getJobsByCompanyId(Request $request, int $companyId)
-    {
+    public function getJobsByCompanyId(Request $request, int $companyId){
         $company = CompanyName::find($companyId);
-        if (!$company) {
+        if(!$company){
             throw new ModelNotFoundException("Company not found");
         }
 
@@ -51,8 +50,7 @@ class JobService
         });
     }
 
-    public function updateJob(int $id, array $data)
-    {
+    public function updateJob(int $id, array $data){
         $job = Job::findOrFail($id);
         $this->updateJobFields($job, $data);
 
@@ -64,11 +62,12 @@ class JobService
         ]);
     }
 
-    public function deleteJob(int $id): void
-    {
+    public function deleteJob(int $id): void{
         $job = Job::findOrFail($id);
         $job->delete();
     }
+
+    /** helpers */
 
     private function createJobRecord(array $data): Job{
 
@@ -93,8 +92,6 @@ class JobService
 
         $this->jobSkillService->attachSkillsToJob($jobId, $skills);
     }
-
-
 
     private function createPipelineForJob(int $jobId, string $jobTitle, array $pipeline): void{
         if (empty($pipeline)) {
