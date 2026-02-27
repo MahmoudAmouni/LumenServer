@@ -3,22 +3,22 @@ namespace App\Services;
 
 use App\Models\Job;
 use App\Models\CompanyName;
+use App\Models\JobSkill;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class JobService
-{
+class JobService{
+
     public function __construct(
         private readonly PipelineService $pipelineService,
         private readonly JobSkillService $jobSkillService,
         private readonly ScoreLabelService $scoreLabelService
     ) {}
 
-    public function getJobsByCompanyId(Request $request, int $companyId)
-    {
+    public function getJobsByCompanyId(Request $request, int $companyId){
         $company = CompanyName::find($companyId);
-        if (!$company) {
+        if(!$company){
             throw new ModelNotFoundException("Company not found");
         }
 
@@ -33,8 +33,7 @@ class JobService
         return $jobs;
     }
 
-    public function createJob(array $data)
-    {
+    public function createJob(array $data){
         return DB::transaction(function () use ($data) {
             $job = $this->createJobRecord($data);
 
@@ -51,8 +50,7 @@ class JobService
         });
     }
 
-    public function updateJob(int $id, array $data)
-    {
+    public function updateJob(int $id, array $data){
         $job = Job::findOrFail($id);
         $this->updateJobFields($job, $data);
 
@@ -64,14 +62,15 @@ class JobService
         ]);
     }
 
-    public function deleteJob(int $id): void
-    {
+    public function deleteJob(int $id): void{
         $job = Job::findOrFail($id);
         $job->delete();
     }
 
-    private function createJobRecord(array $data): Job
-    {
+    /** helpers */
+
+    private function createJobRecord(array $data): Job{
+
         $job = new Job();
         $job->recruiter_id    = $data['recruiter_id'];
         $job->company_id      = $data['company_id'];
@@ -86,15 +85,15 @@ class JobService
         return $job;
     }
 
-    private function attachSkillsToJob(int $jobId, array $skills): void
-    {
-        if (!empty($skills)) {
-            $this->jobSkillService->attachSkillsToJob($jobId, $skills);
+    private function attachSkillsToJob(int $jobId, array $skills): void{
+        if(!empty($skills)){
+           throw new \Exception("Job must have at least one skill");
         }
+
+        $this->jobSkillService->attachSkillsToJob($jobId, $skills);
     }
 
-    private function createPipelineForJob(int $jobId, string $jobTitle, array $pipeline): void
-    {
+    private function createPipelineForJob(int $jobId, string $jobTitle, array $pipeline): void{
         if (empty($pipeline)) {
             return;
         }
@@ -105,8 +104,7 @@ class JobService
         $this->pipelineService->createPipeline($jobId, $jobTitle, $stages);
     }
 
-    private function createScoreLabels(array $criteria): void
-    {
+    private function createScoreLabels(array $criteria): void{
         if (empty($criteria)) {
             return;
         }
@@ -117,8 +115,7 @@ class JobService
         $this->scoreLabelService->createScoreLabels($labels);
     }
 
-    private function updateJobFields(Job $job, array $data): void
-    {
+    private function updateJobFields(Job $job, array $data): void{
         $updatableFields = [
             'title', 'description', 'location',
             'employment_type', 'level', 'status',

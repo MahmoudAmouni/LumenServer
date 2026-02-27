@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateInterviewNotesRequest;
 use App\Services\InterviewService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class InterviewController extends Controller
 {
@@ -29,20 +31,17 @@ class InterviewController extends Controller
         }
     }
 
-    public function updateInterviewNotes(Request $request): JsonResponse
+    public function updateInterviewNotes(UpdateInterviewNotesRequest $request): JsonResponse
     {
         try {
-            $candidateId = $request->input('candidate_id');
-            $jobId = $request->input('job_id');
-            $notes = $request->input('notes', '');
 
-            if (!$candidateId || !$jobId) {
-                return $this->responseJSON(null, 'candidate_id and job_id are required', 400);
-            }
+            $candidateId = $request->validated('candidate_id');
+            $jobId = $request->validated('job_id');
+            $notes = $request->validated('notes', '');
 
             $result = $this->interviewService->updateInterviewNotesByCandidateAndJob(
-                (int) $candidateId,
-                (int) $jobId,
+                $candidateId,
+                $jobId,
                 $notes
             );
             

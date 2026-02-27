@@ -34,39 +34,32 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-    public function userType()
-    {
+    public function userType(){
         return $this->belongsTo(UserType::class, 'type_id');
     }
 
-    public function company()
-    {
+    public function company(){
         return $this->belongsTo(CompanyName::class, 'company_id');
     }
 
-    public function jobsAsRecruiter()
-    {
+    public function jobsAsRecruiter(){
         return $this->hasMany(Job::class, 'recruiter_id');
     }
 
-    public function candidateJobsAdded()
-    {
+    public function candidateJobsAdded(){
         return $this->hasMany(CandidateJob::class, 'recruiter_id');
     }
 
-    public function interviewsAsInterviewer()
-    {
+    public function interviewsAsInterviewer(){
         return $this->hasMany(Interview::class, 'interviewer_id');
     }
 
-    public function offersAsRecruiter()
-    {
+    public function offersAsRecruiter(){
         return $this->hasMany(Offer::class, 'recruiter_id');
     }
 
 
-    public function copilotQueriesAsRecruiter()
-    {
+    public function copilotQueriesAsRecruiter(){
         return $this->hasMany(CopilotQuery::class, 'recruiter_id');
     }
 
@@ -75,8 +68,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
-    public function getJWTCustomClaims()
-    {
+    public function getJWTCustomClaims(){
         return [];
     }
 
