@@ -28,7 +28,7 @@ public function candidate()
 
 public function pipelineStage()
 {
-    return $this->belongsTo(Stage::class, 'pipeline_stage_id');
+    return $this->belongsTo(PipelineStages::class, 'pipeline_stage_id');
 }
 
 public function job()

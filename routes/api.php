@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
 
-Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
@@ -35,6 +34,8 @@ Route::post('/updateJob/{id}', [JobController::class, 'updateJob']);
 Route::post('/deleteJob/{id}', [JobController::class, 'deleteJob']);
 
 Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
+
+    Route::post("/interviews/summarize-notes/{interviewId}", [InterviewN8nController::class, "summarizeAndScoreInterview"]);
 
     Route::post("/logout", [AuthController::class, "logout"]);
     Route::post("/interviews/update/{id}", [InterviewController::class,"update"]);

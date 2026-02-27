@@ -55,6 +55,8 @@ class InterviewN8nService
         $payload = [
             'notes' => $notes,
             'labels' => $labelNames,
+            'job_title'   => $job->title,
+            'job_description' => $job->description,
         ];
     
         $n8nUrl = config('services.n8n.summarize_notes_webhook');
@@ -82,7 +84,7 @@ class InterviewN8nService
     
         $this->validateAiResponse($aiResult);
     
-        $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
+        // $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
     
         return [
             'summary' => $aiResult['summary'],
