@@ -27,8 +27,7 @@ class InterviewService
         return $interview;
     }
 
-    public function updateInterviewNotesByCandidateAndJob(int $candidateId, int $jobId, string $notes): Interview
-    {
+    public function updateInterviewNotesByCandidateAndJob(int $candidateId, int $jobId, string $notes): Interview{
         $interview = $this->findOrCreateInterviewForCandidateAndJob($candidateId, $jobId);
         $interview->notes = $notes;
 
@@ -39,8 +38,7 @@ class InterviewService
         return $interview;
     }
 
-    private function validateInterviewData(array $data, bool $isUpdate): array
-    {
+    private function validateInterviewData(array $data, bool $isUpdate): array{
         $rules = $isUpdate 
             ? $this->getUpdateValidationRules()
             : $this->getCreateValidationRules();
@@ -54,8 +52,7 @@ class InterviewService
         return $validator->validated();
     }
 
-    private function getCreateValidationRules(): array
-    {
+    private function getCreateValidationRules(): array{
         return [
             'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
             'interviewer_id' => ['required', 'integer', 'exists:users,id'],
@@ -67,8 +64,7 @@ class InterviewService
         ];
     }
 
-    private function getUpdateValidationRules(): array
-    {
+    private function getUpdateValidationRules(): array{
         return [
             'candidate_id' => ['sometimes', 'integer', 'exists:candidates,id'],
             'interviewer_id' => ['sometimes', 'integer', 'exists:users,id'],
@@ -80,8 +76,7 @@ class InterviewService
         ];
     }
 
-    private function createInterviewRecord(array $validated): Interview
-    {
+    private function createInterviewRecord(array $validated): Interview{
         $interview = new Interview();
         $interview->candidate_id = $validated['candidate_id'];
         $interview->interviewer_id = $validated['interviewer_id'];
@@ -108,8 +103,7 @@ class InterviewService
         $interview->save();
     }
 
-    private function findOrCreateInterviewForCandidateAndJob(int $candidateId, int $jobId): Interview
-    {
+    private function findOrCreateInterviewForCandidateAndJob(int $candidateId, int $jobId): Interview{
         $interview = Interview::whereHas('scorecards', function ($query) use ($jobId) {
             $query->where('job_id', $jobId);
         })
@@ -123,8 +117,7 @@ class InterviewService
         return $interview;
     }
 
-    private function createDefaultInterview(int $candidateId): Interview
-    {
+    private function createDefaultInterview(int $candidateId): Interview{
             $candidate = Candidate::find($candidateId);
         $interviewerId = $candidate && $candidate->recruiter_id ? $candidate->recruiter_id : 1;
             
