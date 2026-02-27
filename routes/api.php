@@ -19,7 +19,6 @@ Route::group(["prefix" => "v1"], function (){
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
 
-Route::post("/interviews/summarize-notes", [InterviewN8nController::class, "sendPostInterviewWorkflow"]);
 Route::post('/import-excel-n8n', [CandidateImportN8nController::class, 'import']);
 
 Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJobId']);
@@ -42,6 +41,8 @@ Route::group(["prefix" => "auth", "middleware" => "auth:api"], function (){
         Route::delete('/delete/{id}', [JobController::class, 'deleteJob']);
     });
 
+
+    Route::post("/interviews/summarize-notes/{interviewId}", [InterviewN8nController::class, "summarizeAndScoreInterview"]);
 
     Route::post("/logout", [AuthController::class, "logout"]);
     Route::post("/interviews/update/{id}", [InterviewController::class,"update"]);
