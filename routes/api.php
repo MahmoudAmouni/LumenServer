@@ -13,6 +13,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SkillController;
 use Illuminate\Support\Facades\Route;
 
+Route::group(["prefix" => "v1"], function (){
+
 
 Route::post('/login', [AuthController::class, "login"]);
 Route::post('/register', [AuthController::class, "register"]);
@@ -23,17 +25,22 @@ Route::get('/pipelineStages/{job_id}', [PipelineController::class, 'getStagesByJ
 
 Route::get('/error', [AuthController::class, "displayError"])->name("login");
 
-Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
-Route::post('/jobs', [JobController::class, 'createJob']);
-Route::put('/jobs/{id}', [JobController::class, 'updateJob']);
-Route::delete('/jobs/{id}', [JobController::class, 'deleteJob']);
+
 
 Route::get('/companyJobs/{companyId}', [JobController::class, 'getJobsByCompanyId']);
 Route::post('/addJob', [JobController::class, 'createJob']);
 Route::post('/updateJob/{id}', [JobController::class, 'updateJob']);
 Route::post('/deleteJob/{id}', [JobController::class, 'deleteJob']);
 
-Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
+Route::group(["prefix" => "auth", "middleware" => "auth:api"], function (){
+
+    Route::group(["prefix" => "jobs"] , function(){
+        Route::get('/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
+        Route::post('/create', [JobController::class, 'createJob']);
+        Route::put('/update/{id}', [JobController::class, 'updateJob']);
+        Route::delete('/delete/{id}', [JobController::class, 'deleteJob']);
+    });
+
 
     Route::post("/interviews/summarize-notes/{interviewId}", [InterviewN8nController::class, "summarizeAndScoreInterview"]);
 
@@ -82,4 +89,6 @@ Route::group(["prefix" => "v1", "middleware" => "auth:api"], function () {
     Route::get('/jobs/company/{companyId}', [JobController::class, 'getJobsByCompanyId']);
 
     Route::post('/ask-question', [UserController::class, 'askQuestion']);
+});
+
 });

@@ -26,8 +26,7 @@ class JobController extends Controller
         }
     }
 
-    public function createJob(CreateJobRequest $request): JsonResponse
-    {
+    public function createJob(CreateJobRequest $request): JsonResponse{
         try {
             $job = $this->jobService->createJob($request->validated());
             return $this->responseJSON($job, 'success', 201);
