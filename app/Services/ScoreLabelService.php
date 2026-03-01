@@ -13,8 +13,6 @@ class ScoreLabelService
             return;
         }
 
-        $this->validateScoreLabels($scoreLabels);
-
         $labelNames = [];
         foreach ($scoreLabels as $label) {
             $labelNames[] = $label['name'];
@@ -41,17 +39,6 @@ class ScoreLabelService
                 ];
             }
             ScoreLabel::insert($insertData);
-        }
-    }
-    private function validateScoreLabels(array $scoreLabels): void
-    {
-        $validator = Validator::make(['score_labels' => $scoreLabels], [
-            'score_labels' => ['required', 'array', 'min:1'],
-            'score_labels.*.name' => ['required', 'string', 'max:255'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
         }
     }
 }
