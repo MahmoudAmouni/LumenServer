@@ -11,25 +11,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class CandidateImportN8nService
-{
-    public function __construct(private readonly DriveCvService $driveCv)
-    {
-    }
+class CandidateImportN8nService{
 
-    public function importViaN8n(UploadedFile $file , int $recruiterId , int $job_id): array
-    {
+    public function __construct(private readonly DriveCvService $driveCv){}
+
+    public function importViaN8n(UploadedFile $file , int $recruiterId , int $job_id): array{// orchestrates the whole import process - from calling n8n to inserting candidates and attaching cvs
         $recruiterId = $recruiterId;
 
-        $n8n = $this->fetchRowsFromN8n($file, $recruiterId);
+        $rows = $this->fetchRowsFromN8n($file, $recruiterId)['rows'] ?? [];
 
-        if (!$n8n['ok']) {
-            return $n8n['response'];
-        }
-
-        $rows = $n8n['rows'];
-
-        if (!is_array($rows) || count($rows) === 0) {
+        if(!is_array($rows) || count($rows) === 0){
             return [
                 'imported' => 0,
                 'rows' => [],
@@ -39,7 +30,7 @@ class CandidateImportN8nService
 
         $batch = $this->buildBatch($rows, $recruiterId);
 
-        if (count($batch['insertRows']) === 0) {
+        if(count($batch['insertRows']) === 0){
             return [
                 'imported' => 0,
                 'rows' => [],
@@ -62,9 +53,11 @@ class CandidateImportN8nService
             'errors' => $batch['errors'],
         ];
     }
+    
+    // helpers
 
     private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array{
-        $n8nUrl = config('services.n8n.excel_parse_webhook') ?? "http://localhost:5678/webhook-test/test";
+        $n8nUrl = config('services.n8n.excel_parse_webhook');
 
         $res = Http::timeout(180)
             ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
@@ -73,25 +66,13 @@ class CandidateImportN8nService
             ]);
 
         if (!$res->successful()) {
-            return [
-                'ok' => false,
-                'response' => [
-                    'imported' => 0,
-                    'rows' => [],
-                    'errors' => [
-                        'n8n_failed' => [
-                            'status' => $res->status(),
-                            'body' => $res->body(),
-                        ],
-                    ],
-                ],
-            ];
+            return $this->handleN8nError($res);
         }
 
         $data = $res->json();
         $rows = $data['rows'] ?? $data;
 
-        if (!is_array($rows)) {
+        if(!is_array($rows)){
             $rows = [];
         }
 
@@ -100,6 +81,29 @@ class CandidateImportN8nService
             'rows' => $rows,
         ];
     }
+
+    private function handleN8nError($res): array{
+        Log::error("N8n import failed", [
+            'status' => $res->status(),
+            'body' => $res->body(),
+        ]);
+
+        return [
+            'ok' => false,
+            'response' => [
+                'imported' => 0,
+                'rows' => [],
+                'errors' => [
+                    'n8n_failed' => [
+                        'status' => $res->status(),
+                        'body' => $res->body(),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+
 
     private function buildBatch(array $rows, int $recruiterId): array{
         $candidateModel = new Candidate();
@@ -118,40 +122,7 @@ class CandidateImportN8nService
             &$meta,
             &$errors
         ) {
-            $row = (array) $row;
-            $fullName = $row['full_name'] ?? null;
-            $email = isset($row['email']) ? strtolower(trim((string) $row['email'])) : null;
-
-            if (!$fullName || !$email) {
-                $errors[] = "Row " . ($idx + 1) . ": missing full_name/email";
-                return;
-            }
-
-            $item = [
-                'recruiter_id' => (int) $recruiterId,
-                'full_name'    => $fullName,
-                'email'        => $email,
-                'phone_number' => $row['phone_number'] ?? null,
-                'level'        => $row['level'] ?? null,
-                'github_url'   => $row['github_url'] ?? null,
-                'linkedin_url' => $row['linkedin_url'] ?? null,
-                'cv_path'      => null,
-                'age'          => (isset($row['age']) && is_numeric($row['age'])) ? (int) $row['age'] : null,
-                'location'     => $row['location'] ?? null,
-            ];
-
-            if ($useTimestamps) {
-                $item['created_at'] = $batchTime;
-                $item['updated_at'] = $batchTime;
-            }
-
-            $insertRows[] = $item;
-
-            $meta[] = [
-                'row_number'   => $idx + 1,
-                'email'        => $email,
-                'cv_drive_url' => $row['cv_drive_url'] ?? null,
-            ];
+            $this->validateRow($row, $idx, $recruiterId, $useTimestamps, $batchTime, $insertRows, $meta, $errors);
         });
 
         return [
@@ -163,117 +134,156 @@ class CandidateImportN8nService
         ];
     }
 
-    private function insertAndAttachCvs(
-        array $insertRows,
-        array $meta,
-        int $recruiterId,
-        int $job_id,
-        bool $useTimestamps,
-        $batchTime
-    ): array {
+    private function validateRow($row, $idx, $recruiterId, $useTimestamps, $batchTime, &$insertRows, &$meta, &$errors){
+        $row = (array) $row;
+        $fullName = $row['full_name'] ?? null;
+        $email = isset($row['email']) ? strtolower(trim((string) $row['email'])) : null;
 
+        if (!$fullName || !$email) {
+            $errors[] = "Row " . ($idx + 1) . ": missing full_name/email";
+            return;
+        }
+
+        $item = $this->mapRowToCandidate($row, $fullName, $email, $recruiterId);   
+
+        if ($useTimestamps) {
+            $item['created_at'] = $batchTime;
+            $item['updated_at'] = $batchTime;
+        }
+
+        $insertRows[] = $item;
+
+        $meta[] = [
+            'row_number'   => $idx + 1,
+            'email'        => $email,
+            'cv_drive_url' => $row['cv_drive_url'] ?? null,
+        ];
+    }
+
+    private function mapRowToCandidate($row, $fullName, $email, $recruiterId): array{
+         return [
+            'recruiter_id' => (int) $recruiterId,
+            'full_name'    => $fullName,
+            'email'        => $email,
+            'phone_number' => $row['phone_number'] ?? null,
+            'level'        => $row['level'] ?? null,
+            'github_url'   => $row['github_url'] ?? null,
+            'linkedin_url' => $row['linkedin_url'] ?? null,
+            'cv_path'      => null,// will be updated later after fetching from drive
+            'age'          => (isset($row['age']) && is_numeric($row['age'])) ? (int) $row['age'] : null,
+            'location'     => $row['location'] ?? null,
+        ];
+    }
+
+
+
+
+    private function insertAndAttachCvs(array $insertRows,array $meta,int $recruiterId,int $job_id,bool $useTimestamps,): array {
         $out = [];
         $candidateIds = [];
 
         DB::beginTransaction();
+        try{
 
-        try {
-
-            // add to candidates table
-            foreach (array_chunk($insertRows, 500) as $batch) {
-
-                foreach ($batch as $row) {
-                    $candidate = Candidate::create($row);
-                    $candidateIds[$row['email']] = $candidate->id;
-                }
-            }
-            
-            // add to candidate_jobs table
-            foreach (array_chunk($insertRows, 500) as $batch) {
-
-                foreach ($batch as $row) {
-                    $candidate = CandidateJob::create([
-                        "candidate_id" => $candidateIds[$row['email']],
-                        "job_id" => $job_id,
-                        "source" => "linkedin",
-                        "recruiter_id" => $recruiterId,
-                    ]);
-                }
-            }
-
-            collect($meta)->each(function ($m) use (
-                &$out,
-                &$candidateIds,
-                $useTimestamps
-            ) {
-
-                $email = $m['email'];
-                $candidateId = $candidateIds[$email] ?? null;
-
-                if (!$candidateId) {
-                    $out[] = [
-                        'status' => 'failed',
-                        'row'    => $m['row_number'],
-                        'email'  => $email,
-                        'error'  => 'Candidate inserted but ID not found',
-                    ];
-                    return;
-                }
-
-                $cvPath = null;
-
-                if (!empty($m['cv_drive_url'])) {
-                    try {
-
-                        $cvPath = $this->driveCv
-                            ->storeFromDriveUrl($m['cv_drive_url'], $candidateId);
-
-                        Candidate::whereKey($candidateId)->update(
-                            $useTimestamps
-                                ? ['cv_path' => $cvPath, 'updated_at' => now()]
-                                : ['cv_path' => $cvPath]
-                        );
-
-                    } catch (\Throwable $e) {
-
-                        $out[] = [
-                            'status'       => 'cv_failed',
-                            'row'          => $m['row_number'],
-                            'candidate_id' => $candidateId,
-                            'email'        => $email,
-                            'error'        => $e->getMessage(),
-                        ];
-
-                        return;
-                    }
-                }
-
-                $out[] = [
-                    'status'       => 'ok',
-                    'row'          => $m['row_number'],
-                    'candidate_id' => $candidateId,
-                    'email'        => $email,
-                    'cv_path'      => $cvPath,
-                ];
-            });
+            $this->insertIntoCandidatesTable($insertRows);
+            $this->insertIntoCandidateJobsTable($candidateIds, $insertRows, $job_id, $recruiterId);
+            $this->extractAndAttachCvs($meta, $candidateIds , $useTimestamps);
 
             DB::commit();
 
             DB::afterCommit(function () use ($candidateIds){// dispatching jobs after commit to avoid issues with transactions
-                foreach ($candidateIds as $id){
-                    Log::debug("$id");
-                    IngestCandidateCv::dispatch($id);
-                }
+                $this->dispatchIngestionJobs($candidateIds);
             });
 
-        } catch (\Throwable $e) {
-
+        }catch(\Throwable $e){
             DB::rollBack();
             throw $e;
-
         }
 
         return $out;
     }
 
+    private function insertIntoCandidatesTable(array $insertRows): void{
+        foreach (array_chunk($insertRows, 500) as $batch) {
+            foreach ($batch as $row) {
+                $candidate = Candidate::create($row);
+                $candidateIds[$row['email']] = $candidate->id;
+            }
+        }
+    }
+
+    private function insertIntoCandidateJobsTable(array $candidateIds, array $insertRows , int $job_id, int $recruiterId): void{
+        foreach (array_chunk($insertRows, 500) as $batch) {
+            foreach ($batch as $row) {
+                $candidate = CandidateJob::create([
+                    "candidate_id" => $candidateIds[$row['email']],
+                    "job_id" => $job_id,
+                    "source" => "linkedin",
+                    "recruiter_id" => $recruiterId,
+                ]);
+            }
+        }
+    }
+
+    private function extractAndAttachCvs(array $meta, array &$candidateIds, bool $useTimestamps): void{
+        collect($meta)->each(function ($m) use (
+            &$out,
+            &$candidateIds,
+            $useTimestamps
+        ){
+
+            $email = $m['email'];
+            $candidateId = $candidateIds[$email] ?? null;
+
+            if(!$candidateId){
+                $out[] = [
+                    'status' => 'failed',
+                    'row'    => $m['row_number'],
+                    'email'  => $email,
+                    'error'  => 'Candidate inserted but ID not found',
+                ];
+                return;
+            }
+
+            $cvPath = null;
+
+            if(!empty($m['cv_drive_url'])){
+                try {
+                    $cvPath = $this->driveCv
+                        ->storeFromDriveUrl($m['cv_drive_url'], $candidateId);
+
+                    Candidate::whereKey($candidateId)->update(
+                        $useTimestamps
+                            ? ['cv_path' => $cvPath, 'updated_at' => now()]
+                            : ['cv_path' => $cvPath]
+                    );
+
+                }catch(\Throwable $e){
+                    $out[] = [
+                        'status'       => 'cv_failed',
+                        'row'          => $m['row_number'],
+                        'candidate_id' => $candidateId,
+                        'email'        => $email,
+                        'error'        => $e->getMessage(),
+                    ];
+
+                    return;
+                }
+            }
+
+            $out[] = [
+                'status'       => 'ok',
+                'row'          => $m['row_number'],
+                'candidate_id' => $candidateId,
+                'email'        => $email,
+                'cv_path'      => $cvPath,
+            ];
+        });
+    }
+
+    private function dispatchIngestionJobs(array $candidateIds): void{
+        foreach ($candidateIds as $id){
+            IngestCandidateCv::dispatch($id);
+        }
+    }
 }

@@ -17,7 +17,6 @@ class CandidateImportN8nController extends Controller{
             'jobId' => ['required', 'integer'],
         ]);
         $result = $this->service->importViaN8n($validatedData['file'], $validatedData["recruiterId"], $validatedData['jobId']);
-
         return response()->json([
             'status' => 'success',
             'payload' => $result,
