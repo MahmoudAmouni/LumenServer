@@ -5,6 +5,7 @@ namespace App\Services\RAG;
 use App\Services\PromptLoaderService;
 use App\Services\RAG\QueryNormalizerService;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class RagQueryService{
@@ -80,33 +81,39 @@ class RagQueryService{
 
     public function answer(int $candidateId, string $question){
 
-        $normalizedQuestion = $this->query_normalizer->normalize($question);
-        $queryVector = $this->embed($normalizedQuestion);
-        $chunks = $this->retrieve($candidateId, vector: $queryVector);
+        // $normalizedQuestion = $this->query_normalizer->normalize($question);
+        // $queryVector = $this->embed($normalizedQuestion);
+        // $chunks = $this->retrieve($candidateId, vector: $queryVector);
 
-        if (empty($chunks)) {
-            return [
-                'answer' => 'No relevant candidate data found.',
-                'citations' => []
-            ];
-        }
+        // if (empty($chunks)) {
+        //     return [
+        //         'answer' => 'No relevant candidate data found.',
+        //         'citations' => []
+        //     ];
+        // }
 
-        $context = $this->buildContext($chunks);
-        $answer = $this->askModel($context, $question , strict:false);
+        // $context = $this->buildContext($chunks);
+        // $answer = $this->askModel($context, $question , strict:false);
 
 
-        if(!$this->validateBulletFormat($answer)){
-            // stricter retry
-            $answer = $this->askModel($context, $question, strict: true);
-        }
+        // if(!$this->validateBulletFormat($answer)){
+        //     // stricter retry
+        //     $answer = $this->askModel($context, $question, strict: true);
+        // }
 
-        // if it still fails then give up
-        if (! $this->validateBulletFormat($answer)) {
-            return [
-                'answer' => 'Not found in candidate data
-                Source: N/A',
-            ];
-        }
+        // // if it still fails then give up
+        // if (! $this->validateBulletFormat($answer)) {
+        //     return [
+        //         'answer' => 'Not found in candidate data
+        //         Source: N/A',
+        //     ];
+        // }
+
+        // call fastapi endpoint
+        $answer = Http::post(env('FAST_API_LangChain_URL') . '/candidate/ask', [
+            'candidate_id' => $candidateId,
+            'question' => $question,
+        ])->json()['answer'];
 
         return [
             'answer' => $answer,
