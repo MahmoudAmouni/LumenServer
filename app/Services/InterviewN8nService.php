@@ -84,7 +84,7 @@ class InterviewN8nService
     
         $this->validateAiResponse($aiResult);
     
-        // $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
+        $this->scorecardService->updateScorecardsFromAI($interviewId, $aiResult['scores']);
     
         return [
             'summary' => $aiResult['summary'],

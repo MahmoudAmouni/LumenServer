@@ -2,14 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class CreateScorecardRequest extends FormRequest
+class CreateScorecardRequest extends ApiRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
 
     public function rules(): array
     {
@@ -42,4 +36,3 @@ class CreateScorecardRequest extends FormRequest
         ];
     }
 }
-
