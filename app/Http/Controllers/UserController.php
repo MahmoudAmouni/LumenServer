@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AskQuestionRequest;
 use App\Services\RAG\RagQueryService;
 use App\Services\UserService;
 use Exception;
@@ -10,12 +11,9 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function __construct(private UserService $service)
-    {
-    }
+    public function __construct(private UserService $service){}
 
-    public function createUser(Request $request)
-    {
+    public function createUser(Request $request){
         try {
             $user = $this->service->createUser($request->all());
             return $this->responseJSON([
@@ -31,8 +29,7 @@ class UserController extends Controller
         }
     }
 
-    public function getAllUsers()
-    {
+    public function getAllUsers(){
         try {
             return $this->responseJSON($this->service->getAllUsers());
         } catch (Exception $e) {
@@ -40,8 +37,7 @@ class UserController extends Controller
         }
     }
 
-    public function getUsersByCompany($companyId)
-    {
+    public function getUsersByCompany($companyId){
         try {
             return $this->responseJSON($this->service->getUsersByCompany((int) $companyId));
         } catch (Exception $e) {
@@ -49,8 +45,7 @@ class UserController extends Controller
         }
     }
 
-    public function deleteUser($id)
-    {
+    public function deleteUser($id){
         try {
             $this->service->deleteUser((int) $id);
             return $this->responseJSON(null, "success", 204);
@@ -61,10 +56,11 @@ class UserController extends Controller
         }
     }
 
-    public function askQuestion(Request $request , RagQueryService $ragService){
+    public function askQuestion(AskQuestionRequest $request , RagQueryService $ragService){
         try{
-            $candidate_id = $request->auth()->id;
+            $candidate_id = 25; // hardcoded for now, should come from request
             $question = $request->validated()["question"];
+
             $answer = $ragService->answer($candidate_id, $question);
             return $this->responseJSON([
                 'question' => $question,
