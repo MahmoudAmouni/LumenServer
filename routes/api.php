@@ -11,6 +11,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SkillController;
+use App\Http\Controllers\ScorecardController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(["prefix" => "v1"], function (){
@@ -38,6 +39,11 @@ Route::group(["prefix" => "v1"], function (){
             Route::post('/create', [JobController::class, 'createJob']);
             Route::put('/update/{id}', [JobController::class, 'updateJob']);
             Route::delete('/delete/{id}', [JobController::class, 'deleteJob']);
+        });
+
+        Route::group(["prefix" => "scorecards"] , function(){
+            Route::get('/interview/{interviewId}', [ScorecardController::class, 'getScorecardsByInterviewId']);
+            Route::post('/add', [ScorecardController::class, 'createScorecardsForInterview']);
         });
 
 
