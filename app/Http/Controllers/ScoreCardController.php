@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\ScorecardService;
+use App\Http\Requests\CreateScorecardRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -26,27 +26,13 @@ class ScorecardController extends Controller
         }
     }
 
-    public function createScorecardsForInterview(Request $request): JsonResponse
+    public function createScorecardsForInterview(CreateScorecardRequest $request): JsonResponse
     {
         try {
-            $data = $this->validateCreateRequest($request);
-            $scorecards = $this->scorecardService->createScorecardsForInterview($data);
+            $scorecards = $this->scorecardService->createScorecardsForInterview($request->validated());
             return $this->responseJSON($scorecards, 'success', 201);
-        } catch (ValidationException $e) {
-            return $this->responseJSON($e->errors(), 'Validation failed', 422);
         } catch (\Exception $e) {
             return $this->responseJSON('Scorecard creation failed: ' . $e->getMessage(), 'failure', 500);
         }
-    }
-
-    private function validateCreateRequest(Request $request): array
-    {
-        return $request->validate([
-            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'interview_id' => ['required', 'integer', 'exists:interviews,id'],
-            'label_names' => ['required', 'array', 'min:1'],
-            'label_names.*' => ['required', 'string'],
-        ]);
     }
 }

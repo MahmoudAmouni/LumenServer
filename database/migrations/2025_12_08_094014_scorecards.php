@@ -13,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('candidate_id');
             $table->unsignedBigInteger('interview_id');
             $table->string('status')->default('pending');
-            $table->integer('score_rate');
+            $table->integer('score_rate')->nullable();
             $table->unsignedBigInteger('job_id');
             $table->unsignedBigInteger('scorelabel_id');
             $table->timestamps();

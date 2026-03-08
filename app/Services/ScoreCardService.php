@@ -55,6 +55,7 @@ class ScorecardService
             ->where('interview_id', $interviewId)
             ->get();
     }
+
     public function updateScorecardsFromAI(int $interviewId, array $scores)
     {
         $this->validateAIScores($scores);
@@ -62,7 +63,7 @@ class ScorecardService
         $existing = Scorecard::where('interview_id', $interviewId)
             ->with('scorelabel')
             ->get()
-            ->keyBy('scorelabel.name');
+            ->keyBy(fn($s) => optional($s->scorelabel)->name);
 
         foreach ($scores as $item) {
             $labelName = $item['label_name'];
