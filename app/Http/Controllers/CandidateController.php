@@ -12,8 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class CandidateController extends Controller{
 
-    public function __construct(private CandidateService $service){
-    }
+    public function __construct(private CandidateService $service){}
 
     // public function getAllPipelines(GetAllPipelinesRequest $request): JsonResponse{
     //     try {

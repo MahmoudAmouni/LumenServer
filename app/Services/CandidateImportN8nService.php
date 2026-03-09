@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Jobs\IngestCandidateCv;
 use App\Models\Candidate;
 use App\Models\CandidateJob;
-use App\Services\Candidate\CandidateIngestionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -55,7 +54,6 @@ class CandidateImportN8nService{
     }
     
     // helpers
-
     private function fetchRowsFromN8n(UploadedFile $file, int $recruiterId): array{
         $n8nUrl = config('services.n8n.excel_parse_webhook');
 
