@@ -41,29 +41,4 @@ class InterviewService
 
         return $interviews;
     }
-
-
-    private function getCreateValidationRules(): array{
-        return [
-            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'interviewer_id' => ['required', 'integer', 'exists:users,id'],
-            'interview_type_id' => ['required', 'integer'],
-            'notes' => ['nullable', 'string'],
-            'duration' => ['nullable', 'integer', 'min:1'],
-            'scheduled_at' => ['required', 'date'],
-            'status' => ['nullable', 'string', 'in:scheduled,completed,cancelled'],
-        ];
-    }
-
-    private function getUpdateValidationRules(): array{
-        return [
-            'candidate_id' => ['sometimes', 'integer', 'exists:candidates,id'],
-            'interviewer_id' => ['sometimes', 'integer', 'exists:users,id'],
-            'interview_type_id' => ['sometimes', 'integer'],
-            'notes' => ['nullable', 'string'],
-            'duration' => ['nullable', 'integer', 'min:1'],
-            'scheduled_at' => ['sometimes', 'date'],
-            'status' => ['sometimes', 'string', 'in:pending,scheduled,completed,cancelled'],
-        ];
-    }
 }

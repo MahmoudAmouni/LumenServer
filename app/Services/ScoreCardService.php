@@ -19,7 +19,6 @@ class ScorecardService
 
     public function createScorecardsForInterview(array $data)
     {
-        $this->validateCreateData($data);
 
         $candidateId = $data['candidate_id'];
         $jobId = $data['job_id'];
@@ -58,7 +57,6 @@ class ScorecardService
 
     public function updateScorecardsFromAI(int $interviewId, array $scores)
     {
-        $this->validateAIScores($scores);
 
         $existing = Scorecard::where('interview_id', $interviewId)
             ->with('scorelabel')
@@ -80,33 +78,5 @@ class ScorecardService
         return Scorecard::with('scorelabel')
             ->where('interview_id', $interviewId)
             ->get();
-    }
-
-    private function validateCreateData(array $data): void
-    {
-        $validator = Validator::make($data, [
-            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-            'interview_id' => ['required', 'integer', 'exists:interviews,id'],
-            'label_names' => ['required', 'array', 'min:1'],
-            'label_names.*' => ['required', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    private function validateAIScores(array $scores): void
-    {
-        $validator = Validator::make(['scores' => $scores], [
-            'scores' => ['required', 'array', 'min:1'],
-            'scores.*.label_name' => ['required', 'string'],
-            'scores.*.score_rate' => ['required', 'integer', 'min:1', 'max:5'],
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
     }
 }
