@@ -18,7 +18,7 @@ use InvalidArgumentException;
 class CandidateService{
 
     public function getCandidatesByJobIdAndPipelineStage(int $jobId,$pipelineStageIdOrName = null,?int $perPage = null,int $page = 1){
-        
+
         $query = $this->buildCandidatesQuery($jobId);
         $this->applyStageFilter($query, $pipelineStageIdOrName);
 
@@ -34,13 +34,12 @@ class CandidateService{
         return $this->formatCandidatesResponse($candidatePipelineStages, $jobId);
     }
 
-    public function getCandidateProfile(int $candidateId, ?int $jobId = null)
-    {
+    public function getCandidateProfile(int $candidateId, ?int $jobId = null){
         $this->validateCandidateProfileInput($candidateId, $jobId);
 
         $candidate = $this->loadCandidateWithRelations($candidateId, $jobId);
 
-        if (!$candidate) {
+        if(!$candidate){
             throw new ModelNotFoundException("Candidate not found", 404);
         }
 
@@ -60,9 +59,7 @@ class CandidateService{
         );
     }
 
-    public function createCandidate(array $data)
-    {
-        $this->validateCandidateData($data, isUpdate: false);
+    public function createCandidate(array $data){
 
         if (empty($data['recruiter_id'])) {
             throw new InvalidArgumentException('recruiter_id is required');
@@ -77,10 +74,8 @@ class CandidateService{
         return $candidatePipelineStage->load(['candidate', 'pipelineStage', 'job']);
     }
 
-    public function updateCandidateStage(int $candidateId, int $jobId, $stageNameOrId)
-    {
-        $this->validateUpdateStageInput($candidateId, $jobId);
-
+    public function updateCandidateStage(int $candidateId, int $jobId, $stageNameOrId){
+        
         $stage = $this->findStageByIdOrName($stageNameOrId);
 
         if (!$stage) {
@@ -233,8 +228,7 @@ class CandidateService{
         ])->find($candidateId);
     }
 
-    private function formatStageName($currentPipelineStage): ?string
-    {
+    private function formatStageName($currentPipelineStage): ?string{
         if (!$currentPipelineStage || !$currentPipelineStage->pipelineStage) {
             return null;
         }
@@ -242,8 +236,7 @@ class CandidateService{
         return ucfirst(strtolower($currentPipelineStage->pipelineStage->name));
     }
 
-    private function buildTimeline(Candidate $candidate, ?int $jobId, $currentPipelineStage): array
-    {
+    private function buildTimeline(Candidate $candidate, ?int $jobId, $currentPipelineStage): array{
         return $candidate->candidatePipelineStages
             ->where('job_id', $jobId ?? $currentPipelineStage?->job_id)
             ->sortBy('moved_at')
@@ -542,30 +535,7 @@ class CandidateService{
             $candidateJob->save();
         } elseif ($source !== null) {
             $candidateJob->update(['source' => $source]);
-            }
         }
-
-    private function validateUpdateStageInput(int $candidateId, int $jobId): void
-    {
-        $data = [
-            'candidate_id' => $candidateId,
-            'job_id' => $jobId,
-        ];
-        $rules = $this->getUpdateStageValidationRules();
-
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    private function getUpdateStageValidationRules(): array
-    {
-        return [
-            'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-        ];
     }
 
     private function findStageByIdOrName($stageNameOrId): ?Stage
