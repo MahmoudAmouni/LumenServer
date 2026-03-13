@@ -69,7 +69,7 @@ class CandidateController extends Controller{
     public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null){
 
         try {
-            if ($pipelineStageId === null) {
+            if($pipelineStageId === null){
                 $pipelineStageId = $request->query('pipeline_stage_id') 
                     ? $request->query('pipeline_stage_id') 
                     : ($request->query('stage_name') 
@@ -87,8 +87,7 @@ class CandidateController extends Controller{
                     $pipelineStageId,
                     $perPage,
                     $page
-                );
-            
+            );
             return $this->responseJSON($resp);
         } catch (Exception $e) {
             return $this->responseJSON($e->getMessage(), "failure", 400);
