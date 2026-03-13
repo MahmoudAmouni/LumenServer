@@ -15,17 +15,10 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
-class CandidateService
-{
-    public function getCandidatesByJobIdAndPipelineStage(
-        int $jobId,
-        $pipelineStageIdOrName = null,
-        ?int $perPage = null,
-        int $page = 1
-    )
-    {
-        $this->validateJobId($jobId);
+class CandidateService{
 
+    public function getCandidatesByJobIdAndPipelineStage(int $jobId,$pipelineStageIdOrName = null,?int $perPage = null,int $page = 1){
+        
         $query = $this->buildCandidatesQuery($jobId);
         $this->applyStageFilter($query, $pipelineStageIdOrName);
 
@@ -109,25 +102,6 @@ class CandidateService
     }
 
     /** helpers */
-
-    private function validateJobId(int $jobId): void
-    {
-        $data = ['job_id' => $jobId];
-        $rules = $this->getJobIdValidationRules();
-
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-    }
-
-    private function getJobIdValidationRules(): array
-    {
-        return [
-            'job_id' => ['required', 'integer', 'exists:jobs,id'],
-        ];
-    }
 
     private function buildCandidatesQuery(int $jobId)
     {

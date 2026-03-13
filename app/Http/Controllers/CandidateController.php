@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GetAllPipelinesRequest;
+use App\Http\Requests\GetCandidateByJobAndPipelineRequest;
 use App\Services\CandidateService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -66,21 +67,13 @@ class CandidateController extends Controller{
     //     }
     // }
 
-    public function getCandidatesByJobIdAndPipelineStage(Request $request, $jobId, $pipelineStageId = null){
+    public function getCandidatesByJobIdAndPipelineStage(GetCandidateByJobAndPipelineRequest $request , int $jobId){
 
         try {
-            if($pipelineStageId === null){
-                $pipelineStageId = $request->query('pipeline_stage_id') 
-                    ? $request->query('pipeline_stage_id') 
-                    : ($request->query('stage_name') 
-                        ? $request->query('stage_name') 
-                        : null);
-            }
+            $pipelineStageId = $request->pipeline_stage_id ?? $request->stage_name;
+            $perPage = $request->per_page;
+            $page = $request->page;
 
-            $perPage = $request->query('per_page');
-            $page = $request->query('page');
-            $perPage = $perPage !== null ? max(1, min((int) $perPage, 100)) : null;
-            $page = $page !== null ? max(1, (int) $page) : 1;
 
             $resp =  $this->service->getCandidatesByJobIdAndPipelineStage(
                     (int) $jobId,
@@ -90,17 +83,16 @@ class CandidateController extends Controller{
             );
             return $this->responseJSON($resp);
         } catch (Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->responseJSON($e->getMessage(), "Failed to get candidates", 400);
         }
     }
 
-    public function getAllCandidatePipelineStages($id = null)
-    {
+    public function getAllCandidatePipelineStages($id = null){
         try {
             $id = $id ? (int) $id : null;
             return $this->responseJSON($this->service->getAllCandidatePipelineStages($id));
         } catch (Exception $e) {
-            return $this->responseJSON($e->getMessage(), "failure", 400);
+            return $this->responseJSON($e->getMessage(), "Failed to get candidate pipeline stages", 400);
         }
     }
 
