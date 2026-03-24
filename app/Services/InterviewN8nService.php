@@ -8,6 +8,7 @@ use App\Models\CandidatePipelineStage;
 use App\Models\Job;
 use App\Models\Scorecard;
 use App\Services\ScorecardService;
+use App\Services\InterviewService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +16,8 @@ use Illuminate\Validation\ValidationException;
 class InterviewN8nService
 {
     public function __construct(
-        private readonly ScorecardService $scorecardService
+        private readonly ScorecardService $scorecardService,
+        private readonly InterviewService $interviewService
     ) {}
 
     public function summarizeAndScoreInterview(int $interviewId, string $notes)
@@ -39,6 +41,10 @@ class InterviewN8nService
         if (!$job) {
             throw new \Exception("Job not found for candidate");
         }
+
+        $this->interviewService->updateInterview($interviewId, [
+            'notes' => $notes
+        ]);
     
         // get existing scorecard labels from scorecards
         $labelNames = Scorecard::where('interview_id', $interviewId)
