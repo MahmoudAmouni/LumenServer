@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdateInterviewNotesRequest;
+use App\Http\Requests\CreateInterviewRequest;
+use App\Http\Requests\UpdateInterviewRequest;
 use App\Services\InterviewService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Exception;
-use Illuminate\Support\Facades\Log;
 
 class InterviewController extends Controller
 {
@@ -17,40 +15,38 @@ class InterviewController extends Controller
         private readonly InterviewService $interviewService
     ) {
     }
-    public function update(Request $request, int $id): JsonResponse
+
+    public function getInterviewsByJobId(int $jobId): JsonResponse
     {
         try {
-            $result = $this->interviewService->updateInterview($id, $request->all());
-            return $this->responseJSON($result, 'success', 200);
+            $interviews = $this->interviewService->getInterviewsByJobId($jobId);
+            return $this->responseJSON($interviews, 'success', 200);
         } catch (ModelNotFoundException $e) {
-            return $this->responseJSON(null, 'Interview not found', 404);
-        } catch (ValidationException $e) {
-            throw $e;
+            return $this->responseJSON('Job or interviews not found', 'failure', 404);
         } catch (Exception $e) {
-            return $this->responseJSON(null, 'Update failed', 500);
+            return $this->responseJSON('Failed to fetch interviews: ' . $e->getMessage(), 'failure', 500);
         }
     }
 
-    public function updateInterviewNotes(UpdateInterviewNotesRequest $request): JsonResponse
+    public function createInterview(CreateInterviewRequest $request): JsonResponse
     {
         try {
-
-            $candidateId = $request->validated('candidate_id');
-            $jobId = $request->validated('job_id');
-            $notes = $request->validated('notes', '');
-
-            $result = $this->interviewService->updateInterviewNotesByCandidateAndJob(
-                $candidateId,
-                $jobId,
-                $notes
-            );
-            
-            return $this->responseJSON($result, 'success', 200);
-        } catch (ModelNotFoundException $e) {
-            return $this->responseJSON(null, 'Interview not found', 404);
+            $interview = $this->interviewService->createInterview($request->validated());
+            return $this->responseJSON($interview, 'success', 201);
         } catch (Exception $e) {
-            return $this->responseJSON(null, 'Update failed: ' . $e->getMessage(), 500);
+            return $this->responseJSON('Interview creation failed: ' . $e->getMessage(), 'failure', 500);
+        }
+    }
+
+    public function updateInterview(int $id, UpdateInterviewRequest $request): JsonResponse
+    {
+        try {
+            $interview = $this->interviewService->updateInterview($id, $request->validated());
+            return $this->responseJSON($interview, 'success', 200);
+        } catch (ModelNotFoundException $e) {
+            return $this->responseJSON('Interview not found', 'failure', 404);
+        } catch (Exception $e) {
+            return $this->responseJSON('Update failed: ' . $e->getMessage(), 'failure', 500);
         }
     }
 }
-

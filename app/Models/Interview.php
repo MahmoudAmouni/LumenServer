@@ -12,6 +12,7 @@ class Interview extends Model
     protected $table = 'interviews';
     
     protected $fillable = [
+        'job_id',
         'candidate_id',
         'interviewer_id',
         'notes',
@@ -33,5 +34,10 @@ class Interview extends Model
     public function scorecards()
     {
         return $this->hasMany(Scorecard::class, 'interview_id');
+    }
+
+    public function job()
+    {
+        return $this->belongsTo(Job::class, 'job_id');
     }
 }
