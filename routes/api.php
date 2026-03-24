@@ -46,12 +46,16 @@ Route::group(["prefix" => "v1"], function (){
             Route::post('/add', [ScorecardController::class, 'createScorecardsForInterview']);
         });
 
+        Route::group(["prefix" => "interviews"] , function(){
+            Route::get('/{jobId}', [InterviewController::class, 'getInterviewsByJobId']);
+            Route::post('/add', [InterviewController::class,'createInterview']);
+            Route::post('/update/{id}', [InterviewController::class,'updateInterview']);
+        });
+
 
         Route::post("/interviews/summarize-notes/{interviewId}", [InterviewN8nController::class, "summarizeAndScoreInterview"]);
 
         Route::post("/logout", [AuthController::class, "logout"]);
-        Route::post("/interviews/update/{id}", [InterviewController::class,"update"]);
-        Route::post("/interviews/update-notes", [InterviewController::class,"updateInterviewNotes"]);
 
         Route::get('/companies', [CompanyController::class, 'getAllCompanies']);
         Route::post('/companies', [CompanyController::class, 'createCompany']);

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateInterviewRequest;
+use App\Http\Requests\UpdateInterviewRequest;
 use App\Services\InterviewService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Exception;
 
 class InterviewController extends Controller
@@ -38,7 +38,7 @@ class InterviewController extends Controller
         }
     }
 
-    public function updateInterview(int $id, CreateInterviewRequest $request): JsonResponse
+    public function updateInterview(int $id, UpdateInterviewRequest $request): JsonResponse
     {
         try {
             $interview = $this->interviewService->updateInterview($id, $request->validated());

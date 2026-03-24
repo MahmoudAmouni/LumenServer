@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class CreateInterviewRequest extends FormRequest
+class CreateInterviewRequest extends ApiRequest
 {
 
     public function rules(): array

@@ -3,9 +3,8 @@
 namespace App\Services;
 
 use App\Jobs\IngestCandidateInterviewNotes;
-use App\Models\Candidate;
 use App\Models\Interview;
-use Illuminate\Validation\ValidationException;
+use App\Models\Job;
 
 class InterviewService
 {
@@ -34,6 +33,8 @@ class InterviewService
 
     public function getInterviewsByJobId(int $jobId)
     {
+        Job::findOrFail($jobId);
+
         $interviews = Interview::where('job_id', $jobId)
             ->with(['candidate', 'interviewer'])
             ->orderBy('scheduled_at', 'desc')
