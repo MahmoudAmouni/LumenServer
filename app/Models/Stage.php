@@ -19,11 +19,12 @@ class Stage extends Model
     
     protected $fillable = [
         'name',
+        'is_interview',
     ];
 
-    public function candidatePipelineStages()
+    public function candidates()
     {
-        return $this->hasMany(CandidatePipelineStage::class, 'pipeline_stage_id');
+        return $this->hasManyThrough(Candidate::class, PipelineStages::class, 'stage_id', 'id', 'id', 'pipeline_id')->distinct();
     }
 
     public function pipelineStages()

@@ -8,13 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Skill extends Model
 {
     use HasFactory;
-  protected $fillable = [
-    'name',
-];
+    protected $fillable = [
+        'name',
+    ];
 
-public function jobSkills()
-{
-    return $this->hasMany(JobSkill::class, 'skill_id');
-}
-
+    public function jobSkills()
+    {
+        return $this->hasMany(JobSkill::class, 'skill_id');
+    }
 }
