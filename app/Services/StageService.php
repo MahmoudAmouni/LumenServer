@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Stage;
+
 class StageService
 {
     public function createStage(array $data){

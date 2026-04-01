@@ -43,6 +43,6 @@ class CandidatePipelineStage extends Model
 
     public function stage()
     {
-        return $this->hasOneThrough(Stage::class, PipelineStage::class, 'id', 'id', 'pipeline_stage_id', 'stage_id');
+        return $this->hasOneThrough(Stage::class, PipelineStage::class, 'stage_id', 'id', 'pipeline_stage_id', 'id');
     }
 }

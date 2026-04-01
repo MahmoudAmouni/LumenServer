@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\PipelineStages;
+use App\Models\PipelineStage;
 
 class Stage extends Model
 {
@@ -22,19 +22,14 @@ class Stage extends Model
         'is_interview',
     ];
 
-    public function candidates()
-    {
-        return $this->hasManyThrough(Candidate::class, PipelineStages::class, 'stage_id', 'id', 'id', 'pipeline_id')->distinct();
-    }
-
     public function pipelineStages()
     {
-        return $this->hasMany(PipelineStages::class, 'stage_id');
+        return $this->hasMany(PipelineStage::class, 'stage_id');
     }
 
     public function pipelines()
     {
-        return $this->hasManyThrough(Pipeline::class, PipelineStages::class, 'stage_id', 'id', 'id', 'pipeline_id');
+        return $this->hasManyThrough(Pipeline::class, PipelineStage::class, 'stage_id', 'id', 'id', 'pipeline_id');
     }
 }
 
